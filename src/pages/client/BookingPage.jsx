@@ -54,7 +54,7 @@ export const BookingPage = () => {
         'Bab Chari3a',
         'Zqaq Lwali'
       ]
-    },,
+    },
     {
       city: 'Fes',
       neighborhoods: ['Fes El Bali', 'Agdal', 'Sidi Brahim']
@@ -75,12 +75,11 @@ export const BookingPage = () => {
 
   const handleSubmit = () => {
     if (selectedCity && selectedNeighborhood) {
-      navigate('/select-salon', {
+      navigate('/client/select-salon', {
         state: { city: selectedCity, neighborhood: selectedNeighborhood }
       });
     }
   };
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

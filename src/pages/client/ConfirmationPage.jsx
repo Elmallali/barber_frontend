@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon } from 'lucide-react';
-import { QueueVisualizer } from '../components/Booking/QueueVisualizer';
+import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
 
 export const ConfirmationPage = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export const ConfirmationPage = () => {
   const totalInQueue = 7;
 
   const handleConfirm = () => {
-    navigate('/dashboard', {
+    navigate('/client/dashboard', {
       state: {
         salon,
         barber,
@@ -24,7 +24,7 @@ export const ConfirmationPage = () => {
   };
 
   const handleCancel = () => {
-    navigate('/booking');
+    navigate('booking');
   };
 
   return (

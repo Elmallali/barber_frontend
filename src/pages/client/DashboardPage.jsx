@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Tabs } from '../components/UI/Tabs';
-import { NotificationsPanel } from '../components/Dashboard/NotificationsPanel';
-import { StatisticsPanel } from '../components/Dashboard/StatisticsPanel';
-import { ProfilePanel } from '../components/Dashboard/ProfilePanel';
-import { CurrentBookingPanel } from '../components/Dashboard/CurrentBookingPanel';
+import { Tabs } from '../../components/client/UI/Tabs';
+import { NotificationsPanel } from '../../components/client/Dashboard/NotificationsPanel';
+import { StatisticsPanel } from '../../components/client/Dashboard/StatisticsPanel';
+import { ProfilePanel } from '../../components/client/Dashboard/ProfilePanel';
+import { CurrentBookingPanel } from '../../components/client/Dashboard/CurrentBookingPanel';
 
 export const DashboardPage = ({ user }) => {
   const [activeTab, setActiveTab] = useState('booking');

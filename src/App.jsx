@@ -1,15 +1,12 @@
+// src/App.jsx
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from './components/Layout/Layout';
-import { HomePage } from './pages/HomePage';
-import { BookingPage } from './pages/BookingPage';
-import { ConfirmationPage } from './pages/ConfirmationPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { SelectSalonPage } from './pages/SelectSalonPage';
-
+import { Login } from './pages/auth/Login';
+import { Register } from './pages/auth/Register';
+import { ClientRoutes } from './routes/ClientRoutes';
+import { BarbierRoutes } from './routes/BarbierRoutes';
 
 export function App() {
-  // Mock authenticated user
   const [user] = useState({
     id: 1,
     name: 'Alex Johnson',
@@ -27,18 +24,13 @@ export function App() {
 
   return (
     <Router>
-      <div className="bg-gray-50 min-h-screen w-full text-gray-800 font-sans">
-        <Layout user={user}>
-          <Routes>
-            <Route path="/" element={<HomePage user={user} />} />
-            <Route path="/booking" element={<BookingPage />} />
-            <Route path="/select-salon" element={<SelectSalonPage />} />
-            <Route path="/confirmation" element={<ConfirmationPage />} />
-            <Route path="/dashboard" element={<DashboardPage user={user} />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />        
+        <Route path="/client/*" element={<ClientRoutes user={user} />} />
+        <Route path="/barbier/*" element={<BarbierRoutes />} />
+        <Route path="*" element={<Navigate to="/client" replace />} />
+      </Routes>
     </Router>
   );
 }

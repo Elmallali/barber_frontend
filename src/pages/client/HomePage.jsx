@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ScissorsIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 // import { QueuePreview } from '../components/Booking/QueuePreview'; // ولا فين حاطو
-import { QueueJourneyToggle } from '../components/Booking/QueueJourneyToggle';
+import { QueueJourneyToggle } from '../../components/client/Booking/QueueJourneyToggle';
 
 
 
@@ -13,7 +13,7 @@ export const HomePage = ({ user }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
-    navigate('/booking');
+    navigate('booking');
   };
 
   return (

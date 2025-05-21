@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { SalonCard } from '../components/Booking/SalonCard';
+import { SalonCard } from '../../components/client/Booking/SalonCard';
 import { UserIcon } from 'lucide-react';
 
 export const SelectSalonPage = () => {
@@ -42,7 +42,7 @@ export const SelectSalonPage = () => {
 
   const handleConfirm = () => {
     if (selectedSalon && selectedBarber) {
-      navigate('/confirmation', {
+      navigate('/client/confirmation', {
         state: {
           salon: selectedSalon,
           barber: selectedBarber,
