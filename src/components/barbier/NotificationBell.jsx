@@ -7,7 +7,7 @@ export function NotificationBell() {
   const notifications = [
     {
       id: 1,
-      message: 'John Smith has arrived for his appointment',
+      message: 'abdellah Smith has arrived for his appointment',
       time: 'Just now',
     },
     {

@@ -8,8 +8,6 @@ export const QueueSection = ({
   type,
   clients,
   onClientAction,
-  isSessionActive,
-  sessionStartTime,
   sessionPaused,
   handleSessionControl
 }) => {

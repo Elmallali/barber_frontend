@@ -5,7 +5,7 @@ import { UserCircle } from 'lucide-react';
 
 export function Layout({ children, activePage, onNavigate }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-
+  console.log(showProfileMenu);
   return (
     <div className="flex w-full min-h-screen bg-[#f9fafb]">
       <Sidebar activePage={activePage} onNavigate={onNavigate} />

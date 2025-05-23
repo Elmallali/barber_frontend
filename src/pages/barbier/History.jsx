@@ -16,7 +16,7 @@ export function History() {
     {
       id: 1,
       client: {
-        name: 'James Wilson',
+        name: 'abdellah elhamouchi',
         avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
       },
       service: 'Haircut & Beard Trim',

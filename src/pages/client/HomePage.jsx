@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScissorsIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-// import { QueuePreview } from '../components/Booking/QueuePreview'; // ولا فين حاطو
+// import { QueuePreview } from '../components/Booking/QueuePreview';
 import { QueueJourneyToggle } from '../../components/client/Booking/QueueJourneyToggle';
 
 
