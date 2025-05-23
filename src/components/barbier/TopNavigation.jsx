@@ -1,43 +1,51 @@
-import React, { useState } from 'react';
+// src/components/barbier/TopNavigation.jsx
+import React, { useState } from "react";
 import {
   HomeIcon,
   UsersIcon,
   ClockIcon,
   UserIcon,
   SettingsIcon,
-  SearchIcon
-} from 'lucide-react';
-import { NotificationBell } from './NotificationBell';
+  SearchIcon,
+} from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { NotificationBell } from "./NotificationBell";
 
-export function TopNavigation({ activePage, onNavigate, onOpenViewAll }) {
+export function TopNavigation({ onOpenViewAll }) {
   const [showSearch, setShowSearch] = useState(false);
+  const navigate = useNavigate();
 
   const navItems = [
     {
-      id: 'dashboard',
-      label: 'Home',
-      icon: <HomeIcon size={20} />
+      id: "dashboard",
+      label: "Home",
+      icon: <HomeIcon size={20} />,
+      to: "/barbier/dashboard",
     },
     {
-      id: 'queue',
-      label: 'Queue',
-      icon: <UsersIcon size={20} />
+      id: "queue",
+      label: "Queue",
+      icon: <UsersIcon size={20} />,
+      to: "/barbier/queue",
     },
     {
-      id: 'history',
-      label: 'History',
-      icon: <ClockIcon size={20} />
+      id: "history",
+      label: "History",
+      icon: <ClockIcon size={20} />,
+      to: "/barbier/history",
     },
     {
-      id: 'profile',
-      label: 'Profile',
-      icon: <UserIcon size={20} />
+      id: "profile",
+      label: "Profile",
+      icon: <UserIcon size={20} />,
+      to: "/barbier/profile",
     },
     {
-      id: 'settings',
-      label: 'Settings',
-      icon: <SettingsIcon size={20} />
-    }
+      id: "settings",
+      label: "Settings",
+      icon: <SettingsIcon size={20} />,
+      to: "/barbier/settings",
+    },
   ];
 
   return (
@@ -45,25 +53,30 @@ export function TopNavigation({ activePage, onNavigate, onOpenViewAll }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-[#111827] mr-8">
+            <h1
+              className="text-xl font-semibold text-[#111827] mr-8 cursor-pointer"
+              onClick={() => navigate("/barbier/dashboard")}
+            >
               BarberTime
             </h1>
             <nav className="hidden md:flex space-x-4">
               {navItems.map((item) => (
-                <button
+                <NavLink
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    activePage === item.id
-                      ? 'bg-[#2563eb] text-white'
-                      : 'text-[#6b7280] hover:bg-gray-50'
-                  }`}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? "bg-[#2563eb] text-white"
+                        : "text-[#6b7280] hover:bg-gray-50"
+                    }`
+                  }
                 >
                   <span className="flex items-center gap-2">
                     {item.icon}
                     {item.label}
                   </span>
-                </button>
+                </NavLink>
               ))}
             </nav>
           </div>
@@ -99,7 +112,7 @@ export function TopNavigation({ activePage, onNavigate, onOpenViewAll }) {
 
             <NotificationBell />
 
-            <div className="h-8 w-8 rounded-full overflow-hidden">
+            <div className="h-8 w-8 rounded-full overflow-hidden cursor-pointer">
               <img
                 src="https://randomuser.me/api/portraits/men/85.jpg"
                 alt="Profile"

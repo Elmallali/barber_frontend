@@ -1,9 +1,6 @@
 // src/routes/BarbierRoutes.jsx
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
-
-import { TopNavigation } from "../components/barbier/TopNavigation";
-import { ViewAllClientsModal } from "../components/barbier/ViewAllClientsModal";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { BarbierLayout } from "../components/barbier/Layout";
 import { Dashboard } from "../pages/barbier/Dashboard";
 import { Queue } from "../pages/barbier/Queue";
 import { History } from "../pages/barbier/History";
@@ -11,46 +8,73 @@ import { Profile } from "../pages/barbier/Profile";
 import { Settings } from "../pages/barbier/Settings";
 
 export function BarbierRoutes() {
-  // فقط لنمرّر بيانات العملاء للموديال
-  const clients = useSelector((state) => state.queue.clients);
-
-  // الحالة المحلية للتحكّم بالصفحة والموديال
-  const [activePage, setActivePage] = useState("dashboard");
-  const [showViewAll, setShowViewAll] = useState(false);
-
   return (
-    <div className="min-h-screen bg-[#f9fafb] font-['Inter',sans-serif]">
-      {/* Navbar */}
-      <TopNavigation
-        activePage={activePage}
-        onNavigate={setActivePage}
-        onOpenViewAll={() => setShowViewAll(true)}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activePage === "dashboard" && (
-          <Dashboard onGoToQueue={() => setActivePage("queue")} />
-        )}
-
-        {activePage === "queue" && (
-          // لا props، Queue يقرأ من Redux داخلياً
-          <Queue />
-        )}
-
-        {activePage === "history" && <History />}
-        {activePage === "profile" && <Profile />}
-        {activePage === "settings" && <Settings />}
-      </main>
-
-      {/* View All Clients Modal */}
-      <ViewAllClientsModal
-        isOpen={showViewAll}
-        onClose={() => setShowViewAll(false)}
-        clients={clients}
-      />
-    </div>
+    <BarbierLayout>
+      <Route path="barbier/" element={<BarbierLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="queue" element={<Queue />} />
+        <Route path="history" element={<History />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/barbier" replace />} />
+      </Route>
+    </BarbierLayout>
   );
 }
+
+// // src/routes/BarbierRoutes.jsx
+// import React, { useState } from "react";
+// import { useSelector } from "react-redux";
+
+// import { TopNavigation } from "../components/barbier/TopNavigation";
+// import { ViewAllClientsModal } from "../components/barbier/ViewAllClientsModal";
+// import { Dashboard } from "../pages/barbier/Dashboard";
+// import { Queue } from "../pages/barbier/Queue";
+// import { History } from "../pages/barbier/History";
+// import { Profile } from "../pages/barbier/Profile";
+// import { Settings } from "../pages/barbier/Settings";
+
+// export function BarbierRoutes() {
+//   // فقط لنمرّر بيانات العملاء للموديال
+//   const clients = useSelector((state) => state.queue.clients);
+
+//   // الحالة المحلية للتحكّم بالصفحة والموديال
+//   const [activePage, setActivePage] = useState("dashboard");
+//   const [showViewAll, setShowViewAll] = useState(false);
+
+//   return (
+//     <div className="min-h-screen bg-[#f9fafb] font-['Inter',sans-serif]">
+//       {/* Navbar */}
+//       <TopNavigation
+//         activePage={activePage}
+//         onNavigate={setActivePage}
+//         onOpenViewAll={() => setShowViewAll(true)}
+//       />
+
+//       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+//         {activePage === "dashboard" && (
+//           <Dashboard onGoToQueue={() => setActivePage("queue")} />
+//         )}
+
+//         {activePage === "queue" && (
+//           // لا props، Queue يقرأ من Redux داخلياً
+//           <Queue />
+//         )}
+
+//         {activePage === "history" && <History />}
+//         {activePage === "profile" && <Profile />}
+//         {activePage === "settings" && <Settings />}
+//       </main>
+
+//       {/* View All Clients Modal */}
+//       <ViewAllClientsModal
+//         isOpen={showViewAll}
+//         onClose={() => setShowViewAll(false)}
+//         clients={clients}
+//       />
+//     </div>
+//   );
+// }
 
 // src/routes/BarbierRoutes.jsx
 // import React, { useState } from "react";
