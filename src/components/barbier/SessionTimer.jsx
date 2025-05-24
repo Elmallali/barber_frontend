@@ -6,6 +6,37 @@ export const SessionTimer = ({ startTime, client, sessionPaused, onPauseToggle, 
   const [showPopup, setShowPopup] = useState(false);
   const totalPausedMs = useRef(0);
   const pausedAt = useRef(null);
+  const localStartTime = useRef(null);
+  const wasReset = useRef(false);
+
+  // Initialize or update localStartTime when startTime changes
+  useEffect(() => {
+    if (!startTime) return;
+    
+    // If this is a reset operation, always use the new startTime
+    if (wasReset.current) {
+      localStartTime.current = startTime;
+      wasReset.current = false;
+      totalPausedMs.current = 0;
+      pausedAt.current = null;
+      return;
+    }
+
+    // If we don't have a local start time yet, initialize it
+    if (!localStartTime.current) {
+      localStartTime.current = startTime;
+      return;
+    }
+
+    // If the server timestamp is newer than our local one, use it
+    // Otherwise keep our local timestamp to avoid jumps
+    const serverTime = new Date(startTime);
+    const localTime = new Date(localStartTime.current);
+    
+    if (serverTime > localTime) {
+      localStartTime.current = startTime;
+    }
+  }, [startTime]);
 
   // Effect to track when pausing happens
   useEffect(() => {
@@ -22,23 +53,24 @@ export const SessionTimer = ({ startTime, client, sessionPaused, onPauseToggle, 
 
   // Effect for the timer
   useEffect(() => {
-    if (!startTime) return;
+    if (!localStartTime.current) return;
 
     const interval = setInterval(() => {
       if (sessionPaused) return;
 
       const now = new Date();
-      const totalElapsed = now - new Date(startTime) - totalPausedMs.current;
+      const totalElapsed = now - new Date(localStartTime.current) - totalPausedMs.current;
       const minutes = Math.floor(totalElapsed / 60000);
       const seconds = Math.floor((totalElapsed % 60000) / 1000);
       setElapsedTime(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [startTime, sessionPaused]);
+  }, [localStartTime.current, sessionPaused]);
 
   // Handler for reset button - completely restart the timer
   const handleReset = () => {
+    wasReset.current = true;
     totalPausedMs.current = 0;
     pausedAt.current = null;
     setElapsedTime('00:00');

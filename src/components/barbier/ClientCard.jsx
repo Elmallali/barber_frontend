@@ -9,10 +9,17 @@ export const ClientCard = ({
   onMarkArrived,
   onResend,
   timer,
-  sessionPaused,
-  onPauseToggle,
-  onReset
+  // New props for loading states
+  actionLoading = {}, // Object with loading states for different actions
+  actionErrors = {} // Object with error states for different actions
 }) => {
+  // Helper function to determine if an action button should be disabled
+  const isActionDisabled = (actionType) => {
+    return actionLoading.markArrived || 
+           actionLoading.startSession || 
+           actionLoading.endSession || 
+           actionLoading.cancelClient;
+  };
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
       {/* Info */}
@@ -48,28 +55,19 @@ export const ClientCard = ({
             {timer}
 
             <button
-              onClick={onPauseToggle}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                sessionPaused
-                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                  : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-              }`}
-            >
-              {sessionPaused ? 'Resume' : 'Pause'}
-            </button>
-
-            <button
-              onClick={onReset}
-              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-medium"
-            >
-              Reset
-            </button>
-
-            <button
               onClick={onEndSession}
-              className="px-4 py-1.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium"
+              disabled={isActionDisabled('endSession') || actionLoading.endSession}
+              className={`px-4 py-1.5 text-red-700 bg-red-100 hover:bg-red-200 rounded-lg text-sm font-medium flex items-center ${(isActionDisabled('endSession') || actionLoading.endSession) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              End Session
+              {actionLoading.endSession ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-red-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : 'End Session'}
             </button>
           </>
         )}
@@ -77,18 +75,36 @@ export const ClientCard = ({
         {type === 'on-site' && (
           <button
             onClick={onStart}
-            className="px-4 py-1.5 text-green-700 bg-green-100 hover:bg-green-200 rounded-lg text-sm font-medium"
+            disabled={isActionDisabled('startSession') || actionLoading.startSession}
+            className={`px-4 py-1.5 text-green-700 bg-green-100 hover:bg-green-200 rounded-lg text-sm font-medium flex items-center ${(isActionDisabled('startSession') || actionLoading.startSession) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Start
+            {actionLoading.startSession ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Starting...
+              </>
+            ) : 'Start'}
           </button>
         )}
 
         {type === 'on-way' && (
           <button
             onClick={onMarkArrived}
-            className="px-4 py-1.5 text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm font-medium"
+            disabled={isActionDisabled('markArrived') || actionLoading.markArrived}
+            className={`px-4 py-1.5 text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg text-sm font-medium flex items-center ${(isActionDisabled('markArrived') || actionLoading.markArrived) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Arrived
+            {actionLoading.markArrived ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </>
+            ) : 'Arrived'}
           </button>
         )}
 
@@ -101,7 +117,18 @@ export const ClientCard = ({
           </button>
         )}
 
-        <button onClick={onCancel} className="text-gray-500 hover:text-red-500 text-xl px-2">×</button>
+        <button 
+          onClick={onCancel} 
+          disabled={isActionDisabled('cancelClient') || actionLoading.cancelClient}
+          className={`text-gray-500 hover:text-red-500 text-xl px-2 ${(isActionDisabled('cancelClient') || actionLoading.cancelClient) ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {actionLoading.cancelClient ? (
+            <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : '×'}
+        </button>
       </div>
     </div>
   );

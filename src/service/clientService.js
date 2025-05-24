@@ -1,5 +1,18 @@
 import api from "./api";
 
+export const clientService = {
+  async getAllClients(salonId, status = 'ALL') {
+    try {
+      const response = await api.get('/api/queue/entries', {
+        params: { salon_id: salonId, status: status === 'ALL' ? null : status }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      throw error;
+    }
+  }
+};
 // Fetch the client's last visit information
 export const fetchLastVisit = async () => {
   try {
