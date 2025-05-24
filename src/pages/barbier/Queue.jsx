@@ -1,5 +1,5 @@
 // src/pages/barbier/Queue.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { QueueSection } from "../../components/barbier/QueueSection";
 import {
@@ -10,14 +10,22 @@ import {
   pauseSession,
   resumeSession,
   resetSession,
+  fetchActiveQueueAsync
 } from "../../store/slices/queueSlice";
 
 export function Queue() {
   const dispatch = useDispatch();
 
   // نستورد البيانات من الـ Redux store
-  const { clients, sessionStartTime, isSessionActive, sessionPaused } =
+  const { clients, sessionStartTime, isSessionActive, sessionPaused, activeQueue, loading, error } =
     useSelector((state) => state.queue);
+    
+  // Fetch active queue data when component mounts
+  useEffect(() => {
+    // You can replace 1 with the actual salon ID from your context or state
+    const salonId = 1; // Example salon ID
+    dispatch(fetchActiveQueueAsync(salonId));
+  }, [dispatch]);
 
   // handlers يرسلوا الـ actions
   const handleClientAction = (section, clientId, action) => {
@@ -69,6 +77,10 @@ export function Queue() {
         <h1 className="text-2xl font-semibold text-gray-800">
           Here's your queue overview
         </h1>
+        
+        {/* Show loading and error states */}
+        {loading && <p className="text-blue-600 mt-2">Loading queue data...</p>}
+        {error && <p className="text-red-600 mt-2">Error: {error}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

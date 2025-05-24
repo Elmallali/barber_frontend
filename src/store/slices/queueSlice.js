@@ -1,4 +1,19 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { fetchActiveQueue } from "../../service/queueService";
+
+// Async thunk for fetching active queue
+export const fetchActiveQueueAsync = createAsyncThunk(
+  'queue/fetchActiveQueue',
+  async (salonId, { rejectWithValue }) => {
+    try {
+      const data = await fetchActiveQueue(salonId);
+      console.log(data);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch active queue');
+    }
+  }
+);
 
 const initialState = {
   clients: {
@@ -64,6 +79,10 @@ const initialState = {
   isSessionActive: false,
   sessionPaused: false,
   lastEndedClient: null,
+  // New state properties for active queue
+  activeQueue: null,
+  loading: false,
+  error: null,
 };
 
 const queueSlice = createSlice({
@@ -146,6 +165,29 @@ const queueSlice = createSlice({
       state.lastEndedClient = null;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      // Handle the pending state when fetching active queue
+      .addCase(fetchActiveQueueAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      // Handle the fulfilled state when active queue is successfully fetched
+      .addCase(fetchActiveQueueAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.activeQueue = action.payload;
+        
+        // Update the clients lists with data from the API
+        if (action.payload && action.payload.clients) {
+          state.clients = action.payload.clients;
+        }
+      })
+      // Handle the rejected state when fetching active queue fails
+      .addCase(fetchActiveQueueAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch active queue';
+      });
+  },
 });
 
 export const {
@@ -158,5 +200,7 @@ export const {
   resetSession,
   clearLastEnded,
 } = queueSlice.actions;
+
+// We've already exported fetchActiveQueueAsync at the top of the file
 
 export default queueSlice.reducer;
