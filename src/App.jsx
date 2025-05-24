@@ -23,7 +23,6 @@ import { Profile }   from './pages/barbier/Profile';
 import { Settings }  from './pages/barbier/Settings';
 
 export function App() {
-  // بيانات المستخدم الوهمية
   const [user] = useState({
     id: 1,
     name: 'abdellah elhamouchi',
@@ -44,11 +43,9 @@ export function App() {
     <Provider store={store}>
       <BrowserRouter>
         <Routes>
-          {/* مصادقة */}
           <Route path="/login"  element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* مسارات العميل */}
           <Route path="/client" element={<ClientLayout user={user} />}>
             <Route index element={<HomePage user={user} />} />
             <Route path="booking"       element={<BookingPage />} />
@@ -58,7 +55,6 @@ export function App() {
             <Route path="*" element={<Navigate to="/client" replace />} />
           </Route>
 
-          {/* مسارات الحلاق (barbier) */}
           <Route path="/barbier" element={<BarbierLayout />}>
             <Route index   element={<Dashboard />} />
             <Route path="queue"    element={<Queue />} />
@@ -68,7 +64,6 @@ export function App() {
             <Route path="*" element={<Navigate to="/barbier" replace />} />
           </Route>
 
-          {/* إعادة التوجيه لأي مسار غير معروف */}
           <Route path="*" element={<Navigate to="/client" replace />} />
         </Routes>
       </BrowserRouter>

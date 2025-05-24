@@ -57,7 +57,7 @@ export function TopNavigation({ onOpenViewAll }) {
               className="text-xl font-semibold text-[#111827] mr-8 cursor-pointer"
               onClick={() => navigate("/barbier/dashboard")}
             >
-              BarberTime
+              Barber<span className="text-gray-900">Time</span>
             </h1>
             <nav className="hidden md:flex space-x-4">
               {navItems.map((item) => (
