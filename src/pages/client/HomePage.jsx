@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScissorsIcon } from 'lucide-react';
+import { ScissorsIcon, ClockIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-// import { QueuePreview } from '../components/Booking/QueuePreview';
 import { QueueJourneyToggle } from '../../components/client/Booking/QueueJourneyToggle';
+import { fetchLastVisit } from '../../service/clientService';
 
 
 
@@ -11,6 +11,33 @@ import { QueueJourneyToggle } from '../../components/client/Booking/QueueJourney
 
 export const HomePage = ({ user }) => {
   const navigate = useNavigate();
+  const [lastVisit, setLastVisit] = useState({
+    days_ago: null,
+    salon_name: null,
+    loading: true
+  });
+
+  useEffect(() => {
+    const getLastVisit = async () => {
+      try {
+        const data = await fetchLastVisit();
+        setLastVisit({
+          days_ago: data.days_ago,
+          salon_name: data.salon_name,
+          loading: false
+        });
+      } catch (error) {
+        console.error('Error fetching last visit:', error);
+        setLastVisit({
+          days_ago: null,
+          salon_name: null,
+          loading: false
+        });
+      }
+    };
+
+    getLastVisit();
+  }, []);
 
   const handleBookNow = () => {
     navigate('booking');
@@ -49,11 +76,23 @@ export const HomePage = ({ user }) => {
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
               <h3 className="font-medium">Last Visit</h3>
-              <p className="text-gray-600">10 days ago</p>
+              {lastVisit.loading ? (
+                <p className="text-gray-600">Loading...</p>
+              ) : lastVisit.days_ago ? (
+                <p className="text-gray-600">{lastVisit.days_ago} days ago</p>
+              ) : (
+                <p className="text-gray-600">No previous visits</p>
+              )}
             </div>
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
               <h3 className="font-medium">Favorite Salon</h3>
-              <p className="text-gray-600">Classic Cuts</p>
+              {lastVisit.loading ? (
+                <p className="text-gray-600">Loading...</p>
+              ) : lastVisit.salon_name ? (
+                <p className="text-gray-600">{lastVisit.salon_name}</p>
+              ) : (
+                <p className="text-gray-600">No favorite salon yet</p>
+              )}
             </div>
           </div>
         </motion.div>
