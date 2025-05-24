@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import authService from "../../service/authService";
+import api from "../../service/api";
 
 // Thunk for logging in
 export const login = createAsyncThunk(
@@ -8,6 +9,8 @@ export const login = createAsyncThunk(
     try {
       const data = await authService.login(credentials);
       localStorage.setItem("token", data.token);
+      // Set the token in the API headers for future requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || "Login failed");
@@ -22,11 +25,38 @@ export const register = createAsyncThunk(
     try {
       const data = await authService.register(userData);
       localStorage.setItem("token", data.token);
+      // Set the token in the API headers for future requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       return data;
     } catch (err) {
       return thunkAPI.rejectWithValue(
         err.response?.data || "Registration failed"
       );
+    }
+  }
+);
+
+// Thunk for checking if user is already authenticated
+export const checkAuth = createAsyncThunk(
+  "auth/checkAuth",
+  async (_, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        return thunkAPI.rejectWithValue("No token found");
+      }
+      
+      // Set the token in the API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      // Fetch the current user's data
+      const data = await authService.getCurrentUser();
+      return { user: data, token };
+    } catch (err) {
+      // If the token is invalid or expired, remove it
+      localStorage.removeItem("token");
+      return thunkAPI.rejectWithValue(err.response?.data || "Authentication failed");
     }
   }
 );
@@ -37,6 +67,8 @@ const initialState = {
   isLoading: false,
   isError: false,
   errorMessage: null,
+  isAuthenticated: !!localStorage.getItem("token"),
+  isAuthChecked: false,
 };
 
 const authSlice = createSlice({
@@ -46,7 +78,10 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null;
       state.token = null;
+      state.isAuthenticated = false;
       localStorage.removeItem("token");
+      // Remove the token from API headers
+      delete api.defaults.headers.common['Authorization'];
     },
   },
   extraReducers: (builder) => {
@@ -61,6 +96,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -77,11 +113,32 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isAuthenticated = true;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.errorMessage = action.payload;
+      })
+      // checkAuth handlers
+      .addCase(checkAuth.pending, (state) => {
+        state.isLoading = true;
+        state.isError = false;
+        state.errorMessage = null;
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.isAuthChecked = true;
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.isAuthChecked = true;
       });
   },
 });

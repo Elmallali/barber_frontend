@@ -7,13 +7,22 @@ import {
   UserIcon,
   SettingsIcon,
   SearchIcon,
+  LogOutIcon
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/slices/authSlice";
 import { NotificationBell } from "./NotificationBell";
 
 export function TopNavigation({ onOpenViewAll }) {
   const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
 
   const navItems = [
     {
@@ -103,14 +112,22 @@ export function TopNavigation({ onOpenViewAll }) {
               <SearchIcon size={20} />
             </button>
 
+            <NotificationBell count={3} />
+
             <button
               onClick={onOpenViewAll}
-              className="text-sm font-medium text-[#2563eb] hover:text-[#1d4ed8] transition-colors duration-200"
+              className="ml-2 px-3 py-1.5 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors duration-200"
             >
-              View All Clients
+              View All
             </button>
-
-            <NotificationBell />
+            
+            <button
+              onClick={handleLogout}
+              className="ml-2 px-3 py-1.5 flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
+            >
+              <LogOutIcon size={16} />
+              <span className="hidden md:inline">Logout</span>
+            </button>
 
             <div className="h-8 w-8 rounded-full overflow-hidden cursor-pointer">
               <img

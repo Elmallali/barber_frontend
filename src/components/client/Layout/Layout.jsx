@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../../store/slices/authSlice';
+import { fetchNotifications, fetchClientProfile } from '../../../service/clientService';
 import {
   BellIcon,
   UserIcon,
@@ -9,24 +12,33 @@ import {
   XIcon
 } from 'lucide-react';
 
-// Simple NotificationBadge component (inline since external import may not exist)
-const NotificationBadge = () => (
-  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-);
+// Enhanced NotificationBadge component with count display
+const NotificationBadge = ({ count }) => {
+  // If count is more than 9, show 9+
+  const displayCount = count > 9 ? '9+' : count;
+  
+  return (
+    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-bold rounded-full">
+      {displayCount}
+    </span>
+  );
+};
 
-// Simple ProfileDropdown component
+// ProfileDropdown component with logout functionality
 const ProfileDropdown = ({ user, isOpen, onClose }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
   if (!isOpen) return null;
   
   const handleLogout = () => {
-    // Add your logout logic here
-    console.log('Logging out...');
+    dispatch(logout());
     onClose();
+    navigate('/login');
   };
 
   const handleProfile = () => {
-    // Add your profile navigation logic here
-    console.log('Navigate to profile...');
+    navigate('/client/dashboard');
     onClose();
   };
   
@@ -92,10 +104,57 @@ const NotificationDropdown = ({ notifications, isOpen, onClose }) => {
 
 export const Layout = ({ children, user }) => {
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [hasNewNotifications] = useState(true);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications and profile data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch notifications
+        const notificationsData = await fetchNotifications();
+        setNotifications(notificationsData || []);
+        
+        // Check if there are any unread notifications
+        const hasUnread = notificationsData?.some(notification => !notification.read) || false;
+        setHasNewNotifications(hasUnread);
+        
+        // Fetch profile data
+        const profile = await fetchClientProfile();
+        if (profile) {
+          setProfileData(profile);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+    
+    // Set up polling for notifications every 30 seconds
+    const intervalId = setInterval(async () => {
+      try {
+        const notificationsData = await fetchNotifications();
+        setNotifications(notificationsData || []);
+        const hasUnread = notificationsData?.some(notification => !notification.read) || false;
+        setHasNewNotifications(hasUnread);
+      } catch (error) {
+        console.error('Error polling notifications:', error);
+      }
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Default user if none provided
   const defaultUser = {
@@ -103,7 +162,7 @@ export const Layout = ({ children, user }) => {
     email: 'john.doe@example.com',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
   };
-  const currentUser = user || defaultUser;
+  const currentUser = profileData || user || defaultUser;
 
   const navItems = [
     {
@@ -120,33 +179,6 @@ export const Layout = ({ children, user }) => {
       name: 'Dashboard',
       path: '/client/dashboard',
       icon: <UserIcon size={20} />
-    }
-  ];
-
-  const notifications = [
-    {
-      id: 1,
-      type: 'ready',
-      title: 'Almost Your Turn!',
-      message: 'Please be ready in about 5 minutes',
-      time: 'Just now',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'delay',
-      title: 'Slight Delay',
-      message: 'Your appointment is delayed by 10 minutes',
-      time: '5 min ago',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'confirmation',
-      title: 'Booking Confirmed',
-      message: 'Your appointment is set for 2:30 PM',
-      time: '1 hour ago',
-      read: true
     }
   ];
 
@@ -195,11 +227,14 @@ export const Layout = ({ children, user }) => {
             <div className="flex items-center gap-4">
               <div className="relative">
                 <button
-                  className="relative p-2 text-gray-500 hover:text-gray-700 transition"
-                  onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
+                  onClick={() => {
+                    setNotificationDropdownOpen(!notificationDropdownOpen);
+                    setProfileDropdownOpen(false);
+                  }}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   <BellIcon size={20} />
-                  {hasNewNotifications && <NotificationBadge />}
+                  {hasNewNotifications && <NotificationBadge count={notifications.filter(n => !n.read).length} />}
                 </button>
                 <NotificationDropdown
                   notifications={notifications}

@@ -79,7 +79,7 @@ export const HomePage = ({ user }) => {
               {lastVisit.loading ? (
                 <p className="text-gray-600">Loading...</p>
               ) : lastVisit.days_ago ? (
-                <p className="text-gray-600">{lastVisit.days_ago} days ago</p>
+                <p className="text-gray-600">{lastVisit.days_ago.toFixed(0)} days ago</p>
               ) : (
                 <p className="text-gray-600">No previous visits</p>
               )}
