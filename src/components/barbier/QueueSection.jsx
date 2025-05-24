@@ -9,7 +9,10 @@ export const QueueSection = ({
   clients,
   onClientAction,
   sessionPaused,
-  handleSessionControl
+  handleSessionControl,
+  // New props for loading states
+  actionLoading = {},
+  actionErrors = {}
 }) => {
   const [showFiche, setShowFiche] = useState(false);
   const [ficheData, setFicheData] = useState(null);
@@ -60,6 +63,9 @@ export const QueueSection = ({
               sessionPaused={sessionPaused}
               onPauseToggle={() => handleSessionControl(sessionPaused ? 'resume' : 'pause')}
               onReset={() => handleSessionControl('reset')}
+              // Pass loading states
+              actionLoading={actionLoading}
+              actionErrors={actionErrors}
             />
           ))}
         </div>

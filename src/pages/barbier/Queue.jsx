@@ -1,6 +1,7 @@
 // src/pages/barbier/Queue.jsx
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import Toaster from "../../components/ui/Toaster";
 import { QueueSection } from "../../components/barbier/QueueSection";
 import {
   startSession,
@@ -10,15 +11,29 @@ import {
   pauseSession,
   resumeSession,
   resetSession,
-  fetchActiveQueueAsync
+  fetchActiveQueueAsync,
+  markArrivedAsync,
+  startSessionAsync,
+  endSessionAsync,
+  cancelClientAsync,
 } from "../../store/slices/queueSlice";
 
 export function Queue() {
   const dispatch = useDispatch();
 
   // نستورد البيانات من الـ Redux store
-  const { clients, sessionStartTime, isSessionActive, sessionPaused, activeQueue, loading, error } =
-    useSelector((state) => state.queue);
+  const { 
+    clients, 
+    sessionStartTime, 
+    isSessionActive, 
+    sessionPaused, 
+    activeQueue, 
+    loading, 
+    error,
+    // Get action-specific loading states
+    actionLoading,
+    actionErrors
+  } = useSelector((state) => state.queue);
     
   // Fetch active queue data when component mounts
   useEffect(() => {
@@ -29,18 +44,30 @@ export function Queue() {
 
   // handlers يرسلوا الـ actions
   const handleClientAction = (section, clientId, action) => {
+    // In a real app, you'd need to get the actual entryId from your data
+    // For now, assuming entryId is the same as clientId
+    const entryId = clientId;
+    
+    // For startSession, we need a barberId
+    // For now, using a default value of 1
+    const barberId = 1;
+    
+    // For endSession, we need a servicePrice
+    // For now, using a default value of 50
+    const servicePrice = 50;
+    
     switch (action) {
       case "start":
-        dispatch(startSession({ section, clientId }));
+        dispatch(startSessionAsync({ section, clientId, entryId, barberId }));
         break;
       case "end":
-        dispatch(endSession({ clientId }));
+        dispatch(endSessionAsync({ clientId, entryId, servicePrice }));
         break;
       case "cancel":
-        dispatch(cancelClient({ section, clientId }));
+        dispatch(cancelClientAsync({ section, clientId, entryId }));
         break;
       case "mark-arrived":
-        dispatch(markArrived({ clientId }));
+        dispatch(markArrivedAsync({ clientId, entryId }));
         break;
       default:
         break;
@@ -73,6 +100,9 @@ export function Queue() {
 
   return (
     <>
+      {/* Toast notifications for errors */}
+      <Toaster />
+      
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
           Here's your queue overview
@@ -95,6 +125,9 @@ export function Queue() {
             sessionStartTime={sessionStartTime}
             sessionPaused={sessionPaused}
             handleSessionControl={handleSessionControl}
+            // Pass loading states
+            actionLoading={actionLoading}
+            actionErrors={actionErrors}
           />
         ))}
       </div>
