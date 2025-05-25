@@ -129,8 +129,12 @@ export const Layout = ({ children, user }) => {
         
         // Fetch profile data
         const profile = await fetchClientProfile();
-        if (profile) {
+        if (profile && profile.user) {
           setProfileData(profile);
+          
+          // Store basic user info in localStorage as fallback
+          if (profile.user.name) localStorage.setItem('user_name', profile.user.name);
+          if (profile.user.email) localStorage.setItem('user_email', profile.user.email);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -156,13 +160,12 @@ export const Layout = ({ children, user }) => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Default user if none provided
-  const defaultUser = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face'
+  // Use profile data from API, or fallback to localStorage data, or default values
+  const currentUser = profileData?.user || {
+    name: localStorage.getItem('user_name') || user?.name || 'User',
+    email: localStorage.getItem('user_email') || user?.email || '',
+    avatar: user?.avatar || null
   };
-  const currentUser = profileData || user || defaultUser;
 
   const navItems = [
     {
@@ -248,11 +251,17 @@ export const Layout = ({ children, user }) => {
                   className="flex items-center gap-2 hover:bg-gray-100 rounded-lg p-1 transition-colors"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 >
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
+                  {currentUser.avatar ? (
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
+                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  )}
                   <span className="hidden md:inline text-sm font-medium text-gray-700">
                     {currentUser.name}
                   </span>

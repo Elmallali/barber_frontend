@@ -97,6 +97,13 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        
+        // Store user data in localStorage for persistence
+        if (action.payload.user) {
+          localStorage.setItem('user_name', action.payload.user.name || '');
+          localStorage.setItem('user_email', action.payload.user.email || '');
+          localStorage.setItem('user_id', action.payload.user.id ? action.payload.user.id.toString() : '1');
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -114,6 +121,13 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        
+        // Store user data in localStorage for persistence
+        if (action.payload.user) {
+          localStorage.setItem('user_name', action.payload.user.name || '');
+          localStorage.setItem('user_email', action.payload.user.email || '');
+          localStorage.setItem('user_id', action.payload.user.id ? action.payload.user.id.toString() : '1');
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -132,6 +146,13 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.isAuthChecked = true;
+        
+        // Store user data in localStorage for persistence
+        if (action.payload.user) {
+          localStorage.setItem('user_name', action.payload.user.name || '');
+          localStorage.setItem('user_email', action.payload.user.email || '');
+          localStorage.setItem('user_id', action.payload.user.id ? action.payload.user.id.toString() : '1');
+        }
       })
       .addCase(checkAuth.rejected, (state) => {
         state.isLoading = false;

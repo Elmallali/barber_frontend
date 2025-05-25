@@ -16,11 +16,23 @@ export const NotificationsPanel = () => {
       setError(null);
       const data = await fetchNotifications();
       
-      if (!data && !Array.isArray(data)) {
+      // Check if data exists and is an array
+      if (!data) {
         throw new Error('Failed to load notifications');
       }
       
-      setNotifications(data || []);
+      // Process notifications to ensure they have all required fields
+      const processedNotifications = Array.isArray(data) ? data.map(notification => ({
+        id: notification.id,
+        title: notification.title || 'Notification',
+        message: notification.message || notification.content || '',
+        time: notification.created_at || notification.time || 'Just now',
+        read: notification.read || false,
+        type: notification.type || 'default'
+      })) : [];
+      
+      console.log('Processed notifications:', processedNotifications);
+      setNotifications(processedNotifications);
     } catch (error) {
       console.error('Error loading notifications:', error);
       setError('Failed to load notifications. Please try again later.');
