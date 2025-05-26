@@ -18,8 +18,21 @@ import {
   cancelClientAsync,
 } from "../../store/slices/queueSlice";
 
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+    <div className="bg-white p-5 rounded-lg shadow-xl flex flex-col items-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-3"></div>
+      <p className="text-gray-700">Loading queue data...</p>
+    </div>
+  </div>
+);
+
 export function Queue() {
   const dispatch = useDispatch();
+  
+  // Add local loading state for immediate feedback
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // نستورد البيانات من الـ Redux store
   const { 
@@ -37,9 +50,18 @@ export function Queue() {
     
   // Fetch active queue data when component mounts
   useEffect(() => {
+    // Set local loading state to true immediately
+    setIsLoading(true);
+    
     // You can replace 1 with the actual salon ID from your context or state
     const salonId = 1; // Example salon ID
-    dispatch(fetchActiveQueueAsync(salonId));
+    
+    // Dispatch the async action and handle loading state
+    dispatch(fetchActiveQueueAsync(salonId))
+      .finally(() => {
+        // Turn off loading when complete (whether success or error)
+        setIsLoading(false);
+      });
   }, [dispatch]);
 
   // handlers يرسلوا الـ actions
@@ -103,13 +125,15 @@ export function Queue() {
       {/* Toast notifications for errors */}
       <Toaster />
       
+      {/* Full-page loading overlay using local state for immediate feedback */}
+      {isLoading && <LoadingSpinner />}
+      
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
           Here's your queue overview
         </h1>
         
-        {/* Show loading and error states */}
-        {loading && <p className="text-blue-600 mt-2">Loading queue data...</p>}
+        {/* Only show error state */}
         {error && <p className="text-red-600 mt-2">Error: {error}</p>}
       </div>
 
