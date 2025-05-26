@@ -1,7 +1,8 @@
 // src/pages/barbier/Queue.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Toaster from "../../components/ui/Toaster";
+import { toast, Toaster as HotToaster } from "react-hot-toast"; // Import Toaster component
 import { QueueSection } from "../../components/barbier/QueueSection";
 import {
   startSession,
@@ -12,6 +13,7 @@ import {
   resumeSession,
   resetSession,
   fetchActiveQueueAsync,
+  fetchBarberQueueAsync,
   markArrivedAsync,
   startSessionAsync,
   endSessionAsync,
@@ -48,21 +50,43 @@ export function Queue() {
     actionErrors
   } = useSelector((state) => state.queue);
     
-  // Fetch active queue data when component mounts
+  // الحصول على معلومات المستخدم من Redux
+  const { user } = useSelector((state) => state.auth);
+  
+  // Fetch barber-specific queue data when component mounts
   useEffect(() => {
     // Set local loading state to true immediately
     setIsLoading(true);
     
-    // You can replace 1 with the actual salon ID from your context or state
-    const salonId = 1; // Example salon ID
+    // الحصول على معرف الصالون والحلاق من بيانات المستخدم
+    // إذا لم تتوفر بيانات المستخدم، نستخدم القيمة الافتراضية
+    const salonId = user?.salonId || 1; // معرف الصالون من بيانات المستخدم أو الافتراضي
     
-    // Dispatch the async action and handle loading state
-    dispatch(fetchActiveQueueAsync(salonId))
-      .finally(() => {
-        // Turn off loading when complete (whether success or error)
-        setIsLoading(false);
-      });
-  }, [dispatch]);
+    // تحقق مما إذا كان المستخدم حلاقًا وله معرف
+    if (user && user.barberId) {
+      // استدعاء القائمة الخاصة بالحلاق
+      console.log(`Fetching queue for barber: ${user.barberId} in salon: ${salonId}`);
+      dispatch(fetchBarberQueueAsync({ salonId, barberId: user.barberId }))
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else if (user && user.role === 'OWNER' && user.primarySalonId) {
+      // إذا كان المستخدم مالك صالون، نستخدم معرف الصالون الرئيسي
+      const ownerSalonId = user.primarySalonId;
+      console.log(`Owner detected. Fetching queue for salon: ${ownerSalonId}`);
+      dispatch(fetchActiveQueueAsync(ownerSalonId))
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      // إذا لم يكن لدينا معرف الحلاق، نستخدم القائمة العامة للصالون كاحتياطي
+      console.log(`Using default salon ID: ${salonId}`);
+      dispatch(fetchActiveQueueAsync(salonId))
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [dispatch, user]);
 
   // handlers يرسلوا الـ actions
   const handleClientAction = (section, clientId, action) => {
@@ -71,8 +95,8 @@ export function Queue() {
     const entryId = clientId;
     
     // For startSession, we need a barberId
-    // For now, using a default value of 1
-    const barberId = 1;
+    // Using the user's barberId from Redux
+    const barberId = user?.barberId || 1;
     
     // For endSession, we need a servicePrice
     // For now, using a default value of 50
@@ -80,6 +104,21 @@ export function Queue() {
     
     switch (action) {
       case "start":
+        // Check if there are already clients in the "in-session" section
+        if (clients["in-session"] && clients["in-session"].length > 0) {
+          // Show a more prominent toast notification
+          toast.error("Cannot start a new session: Another client is already in service", {
+            duration: 4000,
+            style: {
+              background: '#FEE2E2',
+              color: '#991B1B',
+              fontWeight: 'bold',
+              padding: '16px',
+              borderRadius: '8px',
+            },
+          });
+          return; // Exit the function early to prevent the dispatch
+        }
         dispatch(startSessionAsync({ section, clientId, entryId, barberId }));
         break;
       case "end":
@@ -122,8 +161,11 @@ export function Queue() {
 
   return (
     <>
-      {/* Toast notifications for errors */}
+      {/* Custom error notifications from Redux */}
       <Toaster />
+      
+      {/* Hot Toast notification container - for immediate feedback */}
+      <HotToaster position="top-right" />
       
       {/* Full-page loading overlay using local state for immediate feedback */}
       {isLoading && <LoadingSpinner />}

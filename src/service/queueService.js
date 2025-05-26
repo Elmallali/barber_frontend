@@ -11,6 +11,12 @@ export const fetchActiveQueue = async (salonId) => {
   return data;
 };
 
+// Fetch queue data for a specific barber in a salon
+export const fetchBarberQueue = async (salonId, barberId) => {
+  const { data } = await api.get(`/api/queue/salon/${salonId}/barber/${barberId}`);
+  return data;
+};
+
 // Mark a client as arrived (on-site)
 export const markClientArrived = async (entryId) => {
   const { data } = await api.post(`/api/queue/entry/on-site`, { entry_id: entryId });

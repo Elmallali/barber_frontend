@@ -13,7 +13,8 @@ export const ConfirmationPage = () => {
   const totalInQueue = 7;
 
   const handleConfirm = () => {
-    navigate('/client/dashboard', {
+    // Navigate to the queue page with the booking details
+    navigate('/client/queue', {
       state: {
         salon,
         barber,
@@ -21,14 +22,21 @@ export const ConfirmationPage = () => {
         neighborhood
       }
     });
+    
+    // In a real implementation, here you would make an API call to create the booking
+    // before navigating to the queue page
   };
 
   const handleCancel = () => {
-    navigate('booking');
+    // If not yet booked, go back to the booking page
+    navigate('/client/booking');
   };
 
+
+
+  // Original confirmation page before confirming
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 py-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

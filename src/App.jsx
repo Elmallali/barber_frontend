@@ -15,6 +15,7 @@ import { HomePage } from './pages/client/HomePage';
 import { BookingPage } from './pages/client/BookingPage';
 import { SelectSalonPage } from './pages/client/SelectSalonPage';
 import { ConfirmationPage } from './pages/client/ConfirmationPage';
+import { QueuePage } from './pages/client/QueuePage';
 import { DashboardPage } from './pages/client/DashboardPage';
 
 import { BarbierLayout } from './components/barbier/Layout';
@@ -93,6 +94,7 @@ const AppContent = () => {
         <Route path="booking" element={<BookingPage />} />
         <Route path="select-salon" element={<SelectSalonPage />} />
         <Route path="confirmation" element={<ConfirmationPage />} />
+        <Route path="queue" element={<QueuePage />} />
         <Route path="dashboard" element={<DashboardPage user={user} />} />
         <Route path="*" element={<Navigate to="/client" replace />} />
       </Route>

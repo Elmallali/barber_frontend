@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { 
   fetchActiveQueue, 
+  fetchBarberQueue,
   markClientArrived, 
   startClientSession, 
   finishClientSession, 
@@ -17,6 +18,20 @@ export const fetchActiveQueueAsync = createAsyncThunk(
       return data;
     } catch (error) {
       return rejectWithValue(error.response?.data || 'Failed to fetch active queue');
+    }
+  }
+);
+
+// Async thunk for fetching barber-specific queue
+export const fetchBarberQueueAsync = createAsyncThunk(
+  'queue/fetchBarberQueue',
+  async ({ salonId, barberId }, { rejectWithValue }) => {
+    try {
+      const data = await fetchBarberQueue(salonId, barberId);
+      console.log('Barber queue data:', data);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || 'Failed to fetch barber queue');
     }
   }
 );
@@ -469,6 +484,25 @@ const queueSlice = createSlice({
       .addCase(fetchActiveQueueAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || 'Failed to fetch active queue';
+      })
+      
+      // Handle the barber queue fetch states
+      .addCase(fetchBarberQueueAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBarberQueueAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        state.activeQueue = action.payload;
+        
+        // Update the clients lists with data from the API
+        if (action.payload && action.payload.clients) {
+          state.clients = action.payload.clients;
+        }
+      })
+      .addCase(fetchBarberQueueAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to fetch barber queue';
       })
       
       // markArrived action states
