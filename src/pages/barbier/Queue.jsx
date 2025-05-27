@@ -18,6 +18,8 @@ import {
   startSessionAsync,
   endSessionAsync,
   cancelClientAsync,
+  resetSessionAsync,
+  togglePauseAsync,
 } from "../../store/slices/queueSlice";
 
 // Loading spinner component
@@ -136,15 +138,25 @@ export function Queue() {
   };
 
   const handleSessionControl = (cmd) => {
+    // Get the entry ID from the first client in the in-session section
+    // This assumes there's only one client in session at a time
+    const activeClient = clients["in-session"][0];
+    if (!activeClient) {
+      console.error('No active client in session');
+      return;
+    }
+    
+    const entryId = activeClient.id;
+    
     switch (cmd) {
       case "pause":
-        dispatch(pauseSession());
+        dispatch(togglePauseAsync({ entryId, isPaused: true }));
         break;
       case "resume":
-        dispatch(resumeSession());
+        dispatch(togglePauseAsync({ entryId, isPaused: false }));
         break;
       case "reset":
-        dispatch(resetSession());
+        dispatch(resetSessionAsync(entryId));
         break;
       default:
         break;

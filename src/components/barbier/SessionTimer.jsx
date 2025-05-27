@@ -29,14 +29,23 @@ export const SessionTimer = ({ startTime, client, sessionPaused, onPauseToggle, 
     }
 
     // If the server timestamp is newer than our local one, use it
-    // Otherwise keep our local timestamp to avoid jumps
+    // This ensures we always use the latest start time from the backend
+    // after a page refresh or reset operation
     const serverTime = new Date(startTime);
     const localTime = new Date(localStartTime.current);
     
-    if (serverTime > localTime) {
+    // Always use the server timestamp when it changes
+    // This ensures we pick up timer resets from the backend
+    if (serverTime.getTime() !== localTime.getTime()) {
+      console.log('Using server start time:', serverTime);
       localStartTime.current = startTime;
+      // Reset pause tracking when start time changes
+      totalPausedMs.current = 0;
+      if (!sessionPaused) {
+        pausedAt.current = null;
+      }
     }
-  }, [startTime]);
+  }, [startTime, sessionPaused]);
 
   // Effect to track when pausing happens
   useEffect(() => {

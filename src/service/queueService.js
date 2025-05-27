@@ -58,6 +58,23 @@ export const getAllQueueEntries = async (salonId, status = null) => {
   return data;
 };
 
+// Reset the timer for a session
+export const resetSessionTimer = async (entryId) => {
+  const { data } = await api.post(`/api/queue/entry/reset-timer`, { entry_id: entryId });
+  return data;
+};
+
+// Toggle pause state for a session
+export const toggleSessionPause = async (entryId, isPaused) => {
+  const { data } = await api.post(`/api/queue/entry/toggle-pause`, { 
+    entry_id: entryId,
+    is_paused: isPaused
+  });
+  return data;
+};
+
 export const queueService = {
-  getAllQueueEntries
+  getAllQueueEntries,
+  resetSessionTimer,
+  toggleSessionPause
 };

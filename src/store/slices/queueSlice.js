@@ -5,8 +5,84 @@ import {
   markClientArrived, 
   startClientSession, 
   finishClientSession, 
-  cancelClientEntry 
+  cancelClientEntry,
+  resetSessionTimer,
+  toggleSessionPause
 } from "../../service/queueService";
+
+// Async thunk for resetting session timer
+export const resetSessionAsync = createAsyncThunk(
+  'queue/resetSession',
+  async (entryId, { dispatch, rejectWithValue }) => {
+    try {
+      // First, update the UI optimistically
+      dispatch(resetSession());
+      
+      // Then make the API call to persist the change
+      const response = await resetSessionTimer(entryId);
+      
+      // After successful API call, fetch the updated queue data
+      dispatch(fetchActiveQueueAsync(1)); // Replace 1 with dynamic salonId when available
+      
+      return response;
+    } catch (error) {
+      console.error('Error resetting session timer:', error);
+      
+      // Return detailed error info
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to reset session timer';
+      return rejectWithValue({
+        message: errorMessage,
+        originalError: error,
+        action: 'resetSession',
+        entryId
+      });
+    }
+  }
+);
+
+// Async thunk for toggling session pause state
+export const togglePauseAsync = createAsyncThunk(
+  'queue/togglePause',
+  async ({ entryId, isPaused }, { dispatch, rejectWithValue }) => {
+    try {
+      // First, update the UI optimistically
+      if (isPaused) {
+        dispatch(pauseSession());
+      } else {
+        dispatch(resumeSession());
+      }
+      
+      // Then make the API call to persist the change
+      const response = await toggleSessionPause(entryId, isPaused);
+      
+      // After successful API call, fetch the updated queue data
+      dispatch(fetchActiveQueueAsync(1)); // Replace 1 with dynamic salonId when available
+      
+      return { isPaused, response };
+    } catch (error) {
+      console.error('Error toggling session pause state:', error);
+      
+      // Roll back the optimistic update
+      if (isPaused) {
+        dispatch(resumeSession());
+      } else {
+        dispatch(pauseSession());
+      }
+      
+      // Return detailed error info
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to toggle session pause state';
+      return rejectWithValue({
+        message: errorMessage,
+        originalError: error,
+        action: 'togglePause',
+        entryId,
+        isPaused
+      });
+    }
+  }
+);
+
+
 
 // Async thunk for fetching active queue
 export const fetchActiveQueueAsync = createAsyncThunk(
@@ -172,6 +248,23 @@ export const cancelClientAsync = createAsyncThunk(
 );
 
 const initialState = {
+  // Action loading and error states
+  actionLoading: {
+    markArrived: false,
+    startSession: false,
+    endSession: false,
+    cancelClient: false,
+    resetSession: false,
+    togglePause: false
+  },
+  actionErrors: {
+    markArrived: null,
+    startSession: null,
+    endSession: null,
+    cancelClient: null,
+    resetSession: null,
+    togglePause: null
+  },
   clients: {
     "in-session": [],
     "on-site": [
@@ -505,6 +598,34 @@ const queueSlice = createSlice({
         state.error = action.payload || 'Failed to fetch barber queue';
       })
       
+      // Reset session async actions
+      .addCase(resetSessionAsync.pending, (state) => {
+        state.actionLoading.resetSession = true;
+        state.actionErrors.resetSession = null;
+      })
+      .addCase(resetSessionAsync.fulfilled, (state, action) => {
+        state.actionLoading.resetSession = false;
+        // The optimistic update already occurred, no need to update state here
+      })
+      .addCase(resetSessionAsync.rejected, (state, action) => {
+        state.actionLoading.resetSession = false;
+        state.actionErrors.resetSession = action.payload || 'Failed to reset session timer';
+      })
+      
+      // Toggle pause async actions
+      .addCase(togglePauseAsync.pending, (state) => {
+        state.actionLoading.togglePause = true;
+        state.actionErrors.togglePause = null;
+      })
+      .addCase(togglePauseAsync.fulfilled, (state, action) => {
+        state.actionLoading.togglePause = false;
+        // The optimistic update already occurred via pauseSession/resumeSession
+      })
+      .addCase(togglePauseAsync.rejected, (state, action) => {
+        state.actionLoading.togglePause = false;
+        state.actionErrors.togglePause = action.payload || 'Failed to toggle pause state';
+      })
+      
       // markArrived action states
       .addCase(markArrivedAsync.pending, (state) => {
         state.actionLoading.markArrived = true;
@@ -579,6 +700,6 @@ export const {
 } = queueSlice.actions;
 
 // We've already exported the async thunks at the top of the file
-// fetchActiveQueueAsync, markArrivedAsync, startSessionAsync, endSessionAsync, cancelClientAsync
+// fetchActiveQueueAsync, markArrivedAsync, startSessionAsync, endSessionAsync, cancelClientAsync, resetSessionAsync, togglePauseAsync
 
 export default queueSlice.reducer;
