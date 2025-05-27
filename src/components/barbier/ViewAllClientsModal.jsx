@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { XIcon, Loader2, CheckCircle, XCircle, SkipForward, Clock } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchClientsByStatus, setActiveTab, selectClients, selectClientsLoading, selectClientsError, selectActiveTab } from '../../store/slices/clientsSlice';
+import { selectUser } from '../../store/slices/authSlice';
 
 export function ViewAllClientsModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
@@ -9,7 +10,9 @@ export function ViewAllClientsModal({ isOpen, onClose }) {
   const loading = useSelector(selectClientsLoading);
   const error = useSelector(selectClientsError);
   const activeTab = useSelector(selectActiveTab);
-  const salonId = 1; // tandiro auth logic
+  const user = useSelector(selectUser);
+  const barberId = user?.barberId || null; // Get barber ID directly from user object
+  const salonId = user?.salonId || 1; // Get salon ID from auth, fallback to 1
   
   const tabs = [
     { value: 'WAITING', label: 'Waiting', icon: <Clock size={16} className="text-blue-500" /> },
@@ -19,12 +22,17 @@ export function ViewAllClientsModal({ isOpen, onClose }) {
   ];
   
   useEffect(() => {
-    console.log(salonId);
-    console.log(isOpen);
+    console.log('SalonId:', salonId);
+    console.log('BarberId:', barberId);
+    console.log('Modal open:', isOpen);
     if (isOpen && salonId) {
-      dispatch(fetchClientsByStatus({ salonId: salonId, status: activeTab }));
+      dispatch(fetchClientsByStatus({ 
+        salonId: salonId, 
+        status: activeTab,
+        barberId: barberId // Pass barberId to filter by specific barber
+      }));
     }
-  }, [isOpen, activeTab, salonId, dispatch]);
+  }, [isOpen, activeTab, salonId, barberId, dispatch]);
   
   const handleTabChange = (tab) => {
     dispatch(setActiveTab(tab));
