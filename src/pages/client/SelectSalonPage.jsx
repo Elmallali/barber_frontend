@@ -1,61 +1,77 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { SalonCard } from '../../components/client/Booking/SalonCard';
-import { UserIcon } from 'lucide-react';
+import { UserIcon, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { 
+  fetchSalonsByLocation, 
+  fetchBarbersForSalon,
+  setSelectedSalon,
+  setSelectedBarber
+} from '../../store/slices/bookingSlice';
 
 export const SelectSalonPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { city, neighborhood } = location.state || {};
-
-  const [selectedSalon, setSelectedSalon] = useState(null);
-  const [selectedBarber, setSelectedBarber] = useState(null);
-
-  const salons = [
-    {
-      id: 1,
-      name: 'Salon Al Afdal',
-      description: 'Traditional Moroccan barbershop with modern techniques',
-      waitTime: '~15 min',
-      barbers: [
-        { id: 101, name: 'Yassine', experience: '5 yrs' },
-        { id: 102, name: 'Khalid', experience: '3 yrs' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Zine Coiffure',
-      description: 'Luxury grooming experience for the modern gentleman',
-      waitTime: '~25 min',
-      barbers: [
-        { id: 201, name: 'Hamza', experience: '6 yrs' },
-        { id: 202, name: 'Anas', experience: '4 yrs' }
-      ]
+  const dispatch = useDispatch();
+  
+  const { 
+    selectedCity, 
+    selectedNeighborhood,
+    salons,
+    selectedSalon,
+    selectedBarber,
+    barbers,
+    loadingSalons,
+    loadingBarbers,
+    error 
+  } = useSelector(state => state.booking);
+  
+  useEffect(() => {
+    // If we don't have city/neighborhood data in Redux, go back to booking page
+    if (!selectedCity || !selectedNeighborhood) {
+      navigate('/client/booking');
+      return;
     }
-  ];
+    
+    // Fetch salons based on selected city/neighborhood
+    dispatch(fetchSalonsByLocation({ 
+      city: selectedCity, 
+      neighborhood: selectedNeighborhood 
+    }));
+  }, [dispatch, selectedCity, selectedNeighborhood, navigate]);
+
+  // We're now getting salons from Redux state
 
   const handleSalonSelect = (salon) => {
-    setSelectedSalon(salon);
-    setSelectedBarber(null); // reset barber when changing salon
+    dispatch(setSelectedSalon(salon));
+    dispatch(setSelectedBarber(null)); // reset barber when changing salon
+    console.log(salon.id);
+    dispatch(fetchBarbersForSalon(salon.id));
   };
 
   const handleConfirm = () => {
     if (selectedSalon && selectedBarber) {
-      navigate('/client/confirmation', {
-        state: {
-          salon: selectedSalon,
-          barber: selectedBarber,
-          city,
-          neighborhood
-        }
-      });
+      // No need to pass data via location state since it's in Redux
+      navigate('/client/confirmation');
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-6">Select a Salon in {city}, {neighborhood}</h1>
+      <h1 className="text-2xl font-bold mb-6">Select a Salon in {selectedCity}, {selectedNeighborhood}</h1>
+      
+      {/* Error display */}
+      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>}
+      
+      {/* Loading state */}
+      {loadingSalons && (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="animate-spin text-blue-500" size={32} />
+          <span className="ml-2 text-gray-600">Loading salons...</span>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 mb-10">
         {salons.map((salon) => (
@@ -76,10 +92,30 @@ export const SelectSalonPage = () => {
         >
           <h2 className="text-lg font-semibold mb-4">Select a Barber at {selectedSalon.name}</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {selectedSalon.barbers.map((barber) => (
+            {/* Loading state for barbers */}
+            {loadingBarbers && (
+              <div className="col-span-2 flex justify-center items-center py-6">
+                <Loader2 className="animate-spin text-blue-500" size={24} />
+                <span className="ml-2 text-gray-600">Loading barbers...</span>
+              </div>
+            )}
+            
+            {/* Display barbers list */}
+            {!loadingBarbers && barbers.length === 0 && (
+              <div className="col-span-2 p-4 border rounded-xl border-orange-200 bg-orange-50 text-orange-700">
+                <p className="text-center">
+                  No barbers found for this salon. Please try another salon or check back later.
+                </p>
+                <p className="text-center text-sm mt-2">
+                  (The backend data hasn't been fully seeded yet)
+                </p>
+              </div>
+            )}
+            
+            {!loadingBarbers && barbers.map((barber) => (
               <motion.button
                 key={barber.id}
-                onClick={() => setSelectedBarber(barber)}
+                onClick={() => dispatch(setSelectedBarber(barber))}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`p-4 border rounded-xl flex items-center justify-between transition-all duration-200 ${
@@ -95,6 +131,7 @@ export const SelectSalonPage = () => {
                 <span className="text-sm text-gray-500">{barber.experience}</span>
               </motion.button>
             ))}
+
           </div>
 
           <div className="mt-6 text-right">

@@ -1,30 +1,70 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon } from 'lucide-react';
+import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
+import { createNewBooking } from '../../store/slices/bookingSlice';
 
 export const ConfirmationPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { salon, barber, city, neighborhood } = location.state || {};
-
+  const dispatch = useDispatch();
+  const { 
+    selectedSalon: salon,
+    selectedBarber: barber,
+    selectedCity: city,
+    selectedNeighborhood: neighborhood,
+    creatingBooking
+  } = useSelector(state => state.booking);
+  const { user } = useSelector(state => state.auth);
+  
+  // Default values for UI before booking is created
   const queuePosition = 3;
   const totalInQueue = 7;
-
-  const handleConfirm = () => {
-    // Navigate to the queue page with the booking details
-    navigate('/client/queue', {
-      state: {
-        salon,
-        barber,
-        city,
-        neighborhood
-      }
-    });
+  
+  // Calculate estimated wait time based on barber service time and position
+  const calculateEstimatedWait = () => {
+    if (!barber) return "15-20";
     
-    // In a real implementation, here you would make an API call to create the booking
-    // before navigating to the queue page
+    // Use barber's average service time if available, otherwise default to 15 minutes
+    const avgServiceTime = barber.avg_service_time || 15;
+    
+    // People ahead of you * average service time
+    const estimatedMinutes = (queuePosition - 1) * avgServiceTime;
+    
+    // Add a range for more realistic estimation
+    const minTime = Math.max(0, estimatedMinutes - 5);
+    const maxTime = estimatedMinutes + 5;
+    
+    return minTime === maxTime ? minTime : `${minTime}-${maxTime}`;
+  };
+  
+  // If we don't have salon or barber data in Redux, go back
+  if (!salon || !barber) {
+    navigate('/client/select-salon');
+    return null;
+  }
+
+  const handleConfirm = async () => {
+    try {
+      // Create booking using API
+      await dispatch(createNewBooking({
+        salonId: salon.id,
+        barberId: barber.id,
+        clientId: user?.client?.id || 1 // Fallback to ID 1 for testing
+      })).unwrap();
+      
+      // If successful, show toast and navigate to queue page
+      toast.success('Booking confirmed successfully!');
+      
+      // Slight delay before navigation to allow toast to show
+      setTimeout(() => {
+        navigate('/client/queue');
+      }, 500);
+    } catch (error) {
+      toast.error('Booking failed. Please try again.');
+    }
   };
 
   const handleCancel = () => {
@@ -63,7 +103,7 @@ export const ConfirmationPage = () => {
             </div>
             <div className="mt-4 md:mt-0 flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full">
               <ClockIcon size={18} className="mr-2" />
-              <span>Estimated wait: {salon?.waitTime}</span>
+              <span>Estimated wait: {calculateEstimatedWait()} min</span>
             </div>
           </div>
 
@@ -86,7 +126,7 @@ export const ConfirmationPage = () => {
                 ></div>
               </div>
               <p className="mt-2 text-sm text-gray-500">
-                Estimated time until your turn: {queuePosition * 5} minutes
+                Estimated time until your turn: {calculateEstimatedWait()} minutes
               </p>
             </div>
           </div>
@@ -94,10 +134,20 @@ export const ConfirmationPage = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={handleConfirm}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium flex items-center justify-center transition-colors duration-200"
+              disabled={creatingBooking}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium flex items-center justify-center transition-colors duration-200 disabled:bg-blue-400 disabled:cursor-not-allowed"
             >
-              <CheckIcon size={18} className="mr-2" />
-              Confirm Booking
+              {creatingBooking ? (
+                <>
+                  <Loader2 size={18} className="mr-2 animate-spin" />
+                  Creating Booking...
+                </>
+              ) : (
+                <>
+                  <CheckIcon size={18} className="mr-2" />
+                  Confirm Booking
+                </>
+              )}
             </button>
             <button
               onClick={handleCancel}

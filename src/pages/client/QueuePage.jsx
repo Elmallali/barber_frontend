@@ -1,20 +1,81 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ClockIcon, XIcon, MapPinIcon } from 'lucide-react';
+import { ClockIcon, XIcon, MapPinIcon, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
+import { 
+  fetchActiveBooking, 
+  cancelActiveBooking,
+  clearBookingData 
+} from '../../store/slices/bookingSlice';
 
 export const QueuePage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { salon, barber, city, neighborhood } = location.state || {};
+  const dispatch = useDispatch();
+  
+  const { 
+    activeBooking,
+    queuePosition,
+    totalInQueue,
+    selectedSalon: salon,
+    selectedBarber: barber,
+    selectedCity: city,
+    selectedNeighborhood: neighborhood,
+    loadingActiveBooking,
+    cancellingBooking,
+    error
+  } = useSelector(state => state.booking);
+  const { user } = useSelector(state => state.auth);
+  
+  // Calculate estimated wait time based on barber service time and position
+  const calculateEstimatedWait = () => {
+    if (!barber || !queuePosition) return "--";
+    
+    // Use barber's average service time if available, otherwise default to 15 minutes
+    const avgServiceTime = barber.avg_service_time || 15;
+    
+    // People ahead of you * average service time
+    const peopleAhead = queuePosition - 1;
+    const estimatedMinutes = peopleAhead * avgServiceTime;
+    
+    return estimatedMinutes;
+  };
+  
+  // Poll for booking updates
+  useEffect(() => {
+    if (!user?.client?.id) return;
+    
+    // Initial fetch
+    dispatch(fetchActiveBooking(user.client.id));
+    
+    // Set up polling interval
+    const interval = setInterval(() => {
+      dispatch(fetchActiveBooking(user.client.id));
+    }, 10000); // Poll every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [dispatch, user?.client?.id]);
+  
+  // If we don't have booking data yet and it's not loading, redirect back to booking page
+  useEffect(() => {
+    if (!loadingActiveBooking && !activeBooking && !error) {
+      navigate('/client/booking');
+    }
+  }, [loadingActiveBooking, activeBooking, error, navigate]);
 
-  const queuePosition = 3;
-  const totalInQueue = 7;
-
-  const handleCancel = () => {
-    // Navigate back to booking page
-    navigate('/client/booking');
+  const handleCancel = async () => {
+    if (!activeBooking) return;
+    
+    try {
+      await dispatch(cancelActiveBooking(activeBooking.id)).unwrap();
+      toast.success('Booking cancelled successfully');
+      dispatch(clearBookingData());
+      navigate('/client/booking');
+    } catch (error) {
+      toast.error('Failed to cancel booking');
+    }
   };
 
   return (
@@ -30,7 +91,14 @@ export const QueuePage = () => {
             <h2 className="text-xl font-bold text-green-600">Your Active Booking</h2>
             <div className="mt-2 sm:mt-0 flex items-center bg-blue-50 text-blue-700 px-4 py-1 rounded-full text-sm">
               <ClockIcon size={16} className="mr-2" />
-              Estimated wait: {salon?.waitTime || "~15 min"}
+              {loadingActiveBooking ? (
+                <span className="flex items-center">
+                  <Loader2 size={14} className="mr-2 animate-spin" />
+                  Updating...
+                </span>
+              ) : (
+                <span>Estimated wait: {calculateEstimatedWait()} min</span>
+              )}
             </div>
           </div>
         </div>
@@ -62,10 +130,20 @@ export const QueuePage = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleCancel}
-                  className="mt-6 w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200"
+                  disabled={cancellingBooking}
+                  className="mt-6 w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
-                  <XIcon size={16} className="mr-2" />
-                  Cancel Booking
+                  {cancellingBooking ? (
+                    <>
+                      <Loader2 size={16} className="mr-2 animate-spin" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <XIcon size={16} className="mr-2" />
+                      Cancel Booking
+                    </>
+                  )}
                 </motion.button>
               </div>
             </div>
@@ -93,7 +171,7 @@ export const QueuePage = () => {
                     ></div>
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
-                    Estimated time until your turn: {queuePosition * 5} minutes
+                    Estimated time until your turn: {calculateEstimatedWait()} minutes
                   </p>
                 </div>
                 <div className="mt-6 bg-blue-50 rounded-lg p-4">
