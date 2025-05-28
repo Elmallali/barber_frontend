@@ -4,7 +4,7 @@ import api from "../../service/api";
 
 export const fetchClientsByStatus = createAsyncThunk(
   'clients/fetchByStatus',
-  async ({ salonId, status = null, barberId = null }, { rejectWithValue }) => {
+  async ({ salonId, status = null, barberId = null, date = null }, { rejectWithValue }) => {
     try {
       const params = { 
         salon_id: salonId,
@@ -14,6 +14,11 @@ export const fetchClientsByStatus = createAsyncThunk(
       // Add barber_id to params if it exists
       if (barberId) {
         params.barber_id = barberId;
+      }
+      
+      // Add date to params if it exists
+      if (date) {
+        params.date = date;
       }
       
       const { data } = await api.get('/api/queue/entries', { params });
