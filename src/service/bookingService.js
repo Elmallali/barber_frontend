@@ -53,3 +53,16 @@ export const getAvailableLocations = async () => {
 export const getQueueInfo = async (salonId, barberId) => {
   return await api.get(`/api/salons/${salonId}/barbers/${barberId}/queue-info`);
 };
+
+// Update notification threshold for a booking
+export const updateNotificationThreshold = async (entryId, threshold) => {
+  return await api.post('/api/queue/update-notification-threshold', {
+    entry_id: entryId,
+    notification_threshold: threshold
+  });
+};
+
+// Confirm booking (I'm on my way)
+export const confirmBooking = async (entryId) => {
+  return await api.post(`/api/queue/entry/${entryId}/confirm`);
+};

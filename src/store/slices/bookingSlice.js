@@ -6,7 +6,9 @@ import {
   getActiveBooking,
   cancelBooking,
   getAvailableLocations,
-  getQueueInfo
+  getQueueInfo,
+  updateNotificationThreshold as updateNotificationThresholdAPI,
+  confirmBooking as confirmBookingAPI
 } from '../../service/bookingService';
 
 
@@ -87,6 +89,32 @@ export const fetchQueueInfo = createAsyncThunk(
   }
 );
 
+// Update notification threshold
+export const updateNotificationThreshold = createAsyncThunk(
+  'booking/updateNotificationThreshold',
+  async ({ entryId, threshold }, { rejectWithValue }) => {
+    try {
+      const response = await updateNotificationThresholdAPI(entryId, threshold);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
+// Confirm booking (I'm on my way)
+export const confirmBooking = createAsyncThunk(
+  'booking/confirmBooking',
+  async (entryId, { rejectWithValue }) => {
+    try {
+      const response = await confirmBookingAPI(entryId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: error.message });
+    }
+  }
+);
+
 const bookingSlice = createSlice({
   name: 'booking',
   initialState: {
@@ -111,7 +139,9 @@ const bookingSlice = createSlice({
     neighborhoods: [],
     loadingLocations: false,
     estimatedPosition: null,
-    activeClientsCount: null
+    activeClientsCount: null,
+    updatingThreshold: false,
+    confirmingBooking: false
   },
   reducers: {
     setSelectedCity: (state, action) => {
@@ -274,9 +304,42 @@ const bookingSlice = createSlice({
       .addCase(fetchQueueInfo.rejected, (state, action) => {
         state.loadingQueueInfo = false;
         state.error = action.payload;
-      });
+      })
+      
+      // Update notification threshold
+      .addCase(updateNotificationThreshold.pending, (state) => {
+        state.updatingThreshold = true;
+        state.error = null;
+      })
+      .addCase(updateNotificationThreshold.fulfilled, (state, action) => {
+        state.updatingThreshold = false;
+        if (state.activeBooking) {
+          state.activeBooking.notification_threshold = action.payload.entry.notification_threshold;
+        }
+      })
+      .addCase(updateNotificationThreshold.rejected, (state, action) => {
+        state.updatingThreshold = false;
+        state.error = action.payload?.message || 'Failed to update notification threshold';
+      })
+      
+      // Confirm booking
+      .addCase(confirmBooking.pending, (state) => {
+        state.confirmingBooking = true;
+        state.error = null;
+      })
+      .addCase(confirmBooking.fulfilled, (state, action) => {
+        state.confirmingBooking = false;
+        if (state.activeBooking) {
+          state.activeBooking.status = 'ON_WAY';
+          state.activeBooking.confirmed_at = new Date().toISOString();
+        }
+      })
+      .addCase(confirmBooking.rejected, (state, action) => {
+        state.confirmingBooking = false;
+        state.error = action.payload?.message || 'Failed to confirm booking';
+      })
   }
-});
+})
 
 export const { 
   setSelectedCity, 

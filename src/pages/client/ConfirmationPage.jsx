@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon, Loader2 } from 'lucide-react';
+import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon, Loader2, BellIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
 import { createNewBooking, fetchActiveBooking, fetchQueueInfo } from '../../store/slices/bookingSlice';
@@ -19,6 +19,9 @@ export const ConfirmationPage = () => {
     activeBooking
   } = useSelector(state => state.booking);
   const { user } = useSelector(state => state.auth);
+  
+  // Notification threshold state
+  const [notificationThreshold, setNotificationThreshold] = useState(3);
   
   // Queue information
   const { 
@@ -87,11 +90,12 @@ export const ConfirmationPage = () => {
     }
     
     try {
-      // Create booking using API
+      // Create booking using API with notification threshold
       await dispatch(createNewBooking({
         salonId: salon.id,
         barberId: barber.id,
-        clientId: user?.clientId || user?.client?.id || 1 // Try both formats with fallback to ID 1 for testing
+        clientId: user?.clientId || user?.client?.id || 1, // Try both formats with fallback to ID 1 for testing
+        notificationThreshold
       })).unwrap();
       
       // If successful, show toast and navigate to queue page
@@ -111,7 +115,10 @@ export const ConfirmationPage = () => {
     navigate('/client/booking');
   };
 
-
+  // Handle notification threshold change
+  const handleThresholdChange = (e) => {
+    setNotificationThreshold(Number(e.target.value));
+  };
 
   // Original confirmation page before confirming
   return (
@@ -175,6 +182,51 @@ export const ConfirmationPage = () => {
               </div>
               <p className="mt-2 text-sm text-gray-500">
                 Estimated time until your turn: {calculateEstimatedWait()} minutes
+              </p>
+            </div>
+          </div>
+          
+          {/* Notification Threshold Selector */}
+          <div className="bg-gray-50 rounded-xl p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <BellIcon size={20} className="mr-2 text-blue-600" />
+              <h3 className="text-lg font-medium">Notification Preferences</h3>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
+              <p className="text-gray-700 mb-3">
+                Alert me when I'm in position:
+              </p>
+              
+              <div className="flex flex-wrap gap-3 mb-2">
+                {[1, 2, 3, 4, 5].map(value => (
+                  <label 
+                    key={value}
+                    className={`
+                      flex items-center justify-center w-12 h-12 rounded-full cursor-pointer
+                      border-2 transition-colors
+                      ${notificationThreshold === value 
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium' 
+                        : 'border-gray-200 hover:border-gray-300 text-gray-600'}
+                    `}
+                  >
+                    <input
+                      type="radio"
+                      name="notificationThreshold"
+                      value={value}
+                      checked={notificationThreshold === value}
+                      onChange={handleThresholdChange}
+                      className="sr-only"
+                    />
+                    {value}
+                  </label>
+                ))}
+              </div>
+              
+              <p className="text-sm text-gray-500 mt-2">
+                <span className="text-blue-600">
+                  You'll be notified when you're #{notificationThreshold} in line.
+                </span> You can change this later.
               </p>
             </div>
           </div>
