@@ -9,7 +9,8 @@ import {
   fetchSalonsByLocation, 
   fetchBarbersForSalon,
   setSelectedSalon,
-  setSelectedBarber
+  setSelectedBarber,
+  fetchActiveBooking
 } from '../../store/slices/bookingSlice';
 
 export const SelectSalonPage = () => {
@@ -25,9 +26,27 @@ export const SelectSalonPage = () => {
     barbers,
     loadingSalons,
     loadingBarbers,
+    activeBooking,
     error 
   } = useSelector(state => state.booking);
+  const { user } = useSelector(state => state.auth);
   
+  // Check if user already has an active booking
+  useEffect(() => {
+    if (user?.clientId) {
+      dispatch(fetchActiveBooking(user.clientId));
+    }
+  }, [dispatch, user]);
+  
+  // Redirect to queue page if user has active booking
+  useEffect(() => {
+    if (activeBooking) {
+      toast.info('You already have an active booking');
+      navigate('/client/queue');
+      return;
+    }
+  }, [activeBooking, navigate]);
+
   useEffect(() => {
     // If we don't have city/neighborhood data in Redux, go back to booking page
     if (!selectedCity || !selectedNeighborhood) {

@@ -282,7 +282,7 @@ const initialState = {
   sessionPaused: false,
   lastEndedClient: null,
   
-  activeQueue: null,
+  '3d': null,
   loading: false,
   error: null,
   

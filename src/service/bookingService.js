@@ -39,9 +39,9 @@ export const getActiveBooking = async (clientId) => {
 };
 
 // Cancel booking using the QueueEntryController.cancel endpoint
-export const cancelBooking = async (bookingId) => {
+export const cancelBooking = async (entryId) => {
   // Fixed endpoint to match backend route
-  return await api.delete(`/api/bookings/${bookingId}`);
+  return await api.post('/api/queue/entry/cancel', { entry_id: entryId });
 };
 
 // Get available cities and neighborhoods with salons

@@ -115,9 +115,23 @@ const bookingSlice = createSlice({
       state.selectedBarber = action.payload;
     },
     clearBookingData: (state) => {
+      // Reset active booking data
       state.activeBooking = null;
       state.queuePosition = null;
       state.totalInQueue = null;
+      
+      // Reset location selections
+      state.selectedCity = null;
+      state.selectedNeighborhood = null;
+      
+      // Reset salon and barber selections and lists
+      state.salons = [];
+      state.selectedSalon = null;
+      state.barbers = [];
+      state.selectedBarber = null;
+      
+      // Reset error state
+      state.error = null;
     }
   },
   extraReducers: (builder) => {

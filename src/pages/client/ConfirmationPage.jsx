@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
-import { createNewBooking } from '../../store/slices/bookingSlice';
+import { createNewBooking, fetchActiveBooking } from '../../store/slices/bookingSlice';
 
 export const ConfirmationPage = () => {
   const navigate = useNavigate();
@@ -15,13 +15,29 @@ export const ConfirmationPage = () => {
     selectedBarber: barber,
     selectedCity: city,
     selectedNeighborhood: neighborhood,
-    creatingBooking
+    creatingBooking,
+    activeBooking
   } = useSelector(state => state.booking);
   const { user } = useSelector(state => state.auth);
   
   // Default values for UI before booking is created
   const queuePosition = 3;
   const totalInQueue = 7;
+  
+  // Check if user already has an active booking
+  useEffect(() => {
+    if (user?.clientId) {
+      dispatch(fetchActiveBooking(user.clientId));
+    }
+  }, [dispatch, user]);
+  
+  // Redirect to queue page if user has active booking
+  useEffect(() => {
+    if (activeBooking) {
+      toast('You already have an active booking'); // Using default toast instead of toast.info
+      navigate('/client/queue');
+    }
+  }, [activeBooking, navigate]);
   
   // Calculate estimated wait time based on barber service time and position
   const calculateEstimatedWait = () => {
@@ -47,12 +63,19 @@ export const ConfirmationPage = () => {
   }
 
   const handleConfirm = async () => {
+    // Check if user already has an active booking before proceeding
+    if (activeBooking) {
+      toast.error('You already have an active booking');
+      navigate('/client/queue');
+      return;
+    }
+    
     try {
       // Create booking using API
       await dispatch(createNewBooking({
         salonId: salon.id,
         barberId: barber.id,
-        clientId: user?.client?.id || 1 // Fallback to ID 1 for testing
+        clientId: user?.clientId || user?.client?.id || 1 // Try both formats with fallback to ID 1 for testing
       })).unwrap();
       
       // If successful, show toast and navigate to queue page

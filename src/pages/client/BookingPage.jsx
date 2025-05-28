@@ -4,17 +4,33 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { MapPinIcon, SearchIcon, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { setSelectedCity, setSelectedNeighborhood } from '../../store/slices/bookingSlice';
+import { setSelectedCity, setSelectedNeighborhood, fetchActiveBooking } from '../../store/slices/bookingSlice';
 import { getAvailableLocations } from '../../service/bookingService';
 
 export const BookingPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { selectedCity, selectedNeighborhood } = useSelector(state => state.booking);
+  const { selectedCity, selectedNeighborhood, activeBooking } = useSelector(state => state.booking);
+  const { user } = useSelector(state => state.auth);
   const [search, setSearch] = useState('');
   const [locationData, setLocationData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Check if user already has an active booking
+  useEffect(() => {
+    if (user?.clientId) {
+      dispatch(fetchActiveBooking(user.clientId));
+    }
+  }, [dispatch, user]);
+  
+  // Redirect to queue page if user has active booking
+  useEffect(() => {
+    if (activeBooking) {
+      toast('You already have an active booking');
+      navigate('/client/queue');
+    }
+  }, [activeBooking, navigate]);
 
   // Fetch available locations from backend
   useEffect(() => {

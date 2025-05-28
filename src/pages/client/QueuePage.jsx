@@ -45,18 +45,26 @@ export const QueuePage = () => {
   
   // Poll for booking updates
   useEffect(() => {
-    if (!user?.client?.id) return;
+    // Check for client ID in different possible locations
+    const clientId = user?.clientId || user?.client?.id;
+    
+    if (!clientId) {
+      console.log('No client ID found in user object:', user);
+      return;
+    }
+    
+    console.log('Fetching active booking for client ID:', clientId);
     
     // Initial fetch
-    dispatch(fetchActiveBooking(user.client.id));
+    dispatch(fetchActiveBooking(clientId));
     
     // Set up polling interval
     const interval = setInterval(() => {
-      dispatch(fetchActiveBooking(user.client.id));
+      dispatch(fetchActiveBooking(clientId));
     }, 10000); // Poll every 10 seconds
     
     return () => clearInterval(interval);
-  }, [dispatch, user?.client?.id]);
+  }, [dispatch, user]);
   
   // If we don't have booking data yet and it's not loading, redirect back to booking page
   useEffect(() => {
@@ -66,15 +74,32 @@ export const QueuePage = () => {
   }, [loadingActiveBooking, activeBooking, error, navigate]);
 
   const handleCancel = async () => {
-    if (!activeBooking) return;
+    if (!activeBooking) {
+      toast.error('No active booking found');
+      return;
+    }
+    
+    // Log the activeBooking structure to see what's available
+    console.log('Active booking data:', activeBooking);
+    
+    // Find the entry ID - backend expects entry_id
+    const entryId = activeBooking.id;
+    
+    if (!entryId) {
+      toast.error('Cannot find entry ID');
+      console.error('Entry ID not found in:', activeBooking);
+      return;
+    }
     
     try {
-      await dispatch(cancelActiveBooking(activeBooking.id)).unwrap();
+      console.log('Attempting to cancel booking with entry ID:', entryId);
+      await dispatch(cancelActiveBooking(entryId)).unwrap();
       toast.success('Booking cancelled successfully');
       dispatch(clearBookingData());
-      navigate('/client/booking');
+      navigate('/client'); // Navigate to home page instead of booking page
     } catch (error) {
-      toast.error('Failed to cancel booking');
+      console.error('Cancel booking error:', error);
+      toast.error('Failed to cancel booking: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -116,7 +141,11 @@ export const QueuePage = () => {
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Barber</div>
-                    <div className="font-medium">{barber?.name} ({barber?.experience})</div>
+                    <div className="font-medium">
+                      {barber?.name || (activeBooking?.entry?.barber?.name) || 'Unknown'}
+                      {barber?.experience || (activeBooking?.entry?.barber?.experience) ? 
+                        ` (${barber?.experience || activeBooking?.entry?.barber?.experience})` : ''}
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Location</div>
