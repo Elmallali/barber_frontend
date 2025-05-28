@@ -4,7 +4,9 @@ import {
   getBarbersForSalon,
   createBooking,
   getActiveBooking,
-  cancelBooking 
+  cancelBooking,
+  getAvailableLocations,
+  getQueueInfo
 } from '../../service/bookingService';
 
 
@@ -73,33 +75,43 @@ export const cancelActiveBooking = createAsyncThunk(
   }
 );
 
+export const fetchQueueInfo = createAsyncThunk(
+  'booking/fetchQueueInfo',
+  async ({ salonId, barberId }, { rejectWithValue }) => {
+    try {
+      const response = await getQueueInfo(salonId, barberId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch queue information');
+    }
+  }
+);
+
 const bookingSlice = createSlice({
   name: 'booking',
   initialState: {
     
     selectedCity: null,
     selectedNeighborhood: null,
-    
-    
-    salons: [],
     selectedSalon: null,
-    barbers: [],
     selectedBarber: null,
-    
-    
-    activeBooking: null,
-    queuePosition: null,
-    totalInQueue: null,
-    
-    
+    salons: [],
+    barbers: [],
     loadingSalons: false,
     loadingBarbers: false,
     creatingBooking: false,
-    loadingActiveBooking: false,
     cancellingBooking: false,
-    
-    
-    error: null
+    loadingActiveBooking: false,
+    loadingQueueInfo: false,
+    activeBooking: null,
+    queuePosition: null,
+    totalInQueue: null,
+    error: null,
+    cities: [],
+    neighborhoods: [],
+    loadingLocations: false,
+    estimatedPosition: null,
+    activeClientsCount: null
   },
   reducers: {
     setSelectedCity: (state, action) => {
@@ -187,9 +199,36 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchActiveBooking.fulfilled, (state, action) => {
         state.loadingActiveBooking = false;
-        state.activeBooking = action.payload.entry;
-        state.queuePosition = action.payload.position;
-        state.totalInQueue = action.payload.totalInQueue;
+        
+        // Only update if we have valid data
+        if (action.payload) {
+          // Check if the response has an entry property or if it is the entry itself
+          if (action.payload.entry) {
+            // Structure with entry property
+            state.activeBooking = action.payload.entry;
+            state.queuePosition = action.payload.position;
+            state.totalInQueue = action.payload.totalInQueue;
+            
+            console.log('Active booking data updated (entry format):', {
+              entry: action.payload.entry,
+              position: action.payload.position,
+              totalInQueue: action.payload.totalInQueue
+            });
+          } else if (action.payload.id) {
+            // Direct entry structure (the payload itself is the entry)
+            state.activeBooking = action.payload;
+            // If position is not provided in this format, default to the position in the entry
+            state.queuePosition = action.payload.position || 0;
+            // If totalInQueue is not provided, default to 1 (at least this booking)
+            state.totalInQueue = 1;
+            
+            console.log('Active booking data updated (direct format):', action.payload);
+          } else {
+            console.log('Unexpected data format received:', action.payload);
+          }
+        } else {
+          console.log('No active booking data received from API');
+        }
       })
       .addCase(fetchActiveBooking.rejected, (state, action) => {
         state.loadingActiveBooking = false;
@@ -210,6 +249,30 @@ const bookingSlice = createSlice({
       })
       .addCase(cancelActiveBooking.rejected, (state, action) => {
         state.cancellingBooking = false;
+        state.error = action.payload;
+      })
+      
+      // Handle fetchQueueInfo
+      .addCase(fetchQueueInfo.pending, (state) => {
+        state.loadingQueueInfo = true;
+        state.error = null;
+      })
+      .addCase(fetchQueueInfo.fulfilled, (state, action) => {
+        state.loadingQueueInfo = false;
+        if (action.payload) {
+          state.estimatedPosition = action.payload.estimatedPosition || 1;
+          state.activeClientsCount = action.payload.activeClientsCount || 0;
+          state.totalInQueue = action.payload.totalInQueue || state.activeClientsCount + 1;
+          
+          console.log('Queue info updated:', {
+            estimatedPosition: state.estimatedPosition,
+            activeClientsCount: state.activeClientsCount,
+            totalInQueue: state.totalInQueue
+          });
+        }
+      })
+      .addCase(fetchQueueInfo.rejected, (state, action) => {
+        state.loadingQueueInfo = false;
         state.error = action.payload;
       });
   }

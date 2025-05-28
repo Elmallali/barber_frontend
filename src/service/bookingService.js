@@ -48,3 +48,8 @@ export const cancelBooking = async (entryId) => {
 export const getAvailableLocations = async () => {
   return await api.get('/api/salons/locations');
 };
+
+// Get queue information for a specific barber and salon
+export const getQueueInfo = async (salonId, barberId) => {
+  return await api.get(`/api/salons/${salonId}/barbers/${barberId}/queue-info`);
+};

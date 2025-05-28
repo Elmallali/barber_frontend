@@ -31,10 +31,10 @@ export const QueuePage = () => {
   
   // Calculate estimated wait time based on barber service time and position
   const calculateEstimatedWait = () => {
-    if (!barber || !queuePosition) return "--";
+    if (!queuePosition) return "--";
     
     // Use barber's average service time if available, otherwise default to 15 minutes
-    const avgServiceTime = barber.avg_service_time || 15;
+    const avgServiceTime = activeBooking?.barber?.avg_service_time || barber?.avg_service_time || 15;
     
     // People ahead of you * average service time
     const peopleAhead = queuePosition - 1;
@@ -50,28 +50,68 @@ export const QueuePage = () => {
     
     if (!clientId) {
       console.log('No client ID found in user object:', user);
-      return;
+      // Instead of returning early, we can try to get clientId from localStorage
+      const storedClientId = localStorage.getItem('clientId');
+      if (storedClientId) {
+        console.log('Using stored client ID from localStorage:', storedClientId);
+        dispatch(fetchActiveBooking(storedClientId));
+      } else {
+        console.log('No client ID available, cannot fetch booking data');
+        return;
+      }
+    } else {
+      // Store clientId in localStorage for persistence across refreshes
+      localStorage.setItem('clientId', clientId);
+      console.log('Fetching active booking for client ID:', clientId);
+      
+      // Initial fetch
+      dispatch(fetchActiveBooking(clientId));
     }
     
-    console.log('Fetching active booking for client ID:', clientId);
-    
-    // Initial fetch
-    dispatch(fetchActiveBooking(clientId));
-    
-    // Set up polling interval
-    const interval = setInterval(() => {
-      dispatch(fetchActiveBooking(clientId));
-    }, 10000); // Poll every 10 seconds
-    
-    return () => clearInterval(interval);
+    // Set up polling interval using the available clientId
+    const intervalClientId = clientId || localStorage.getItem('clientId');
+    if (intervalClientId) {
+      const interval = setInterval(() => {
+        console.log('Polling for booking updates...');
+        dispatch(fetchActiveBooking(intervalClientId));
+      }, 10000); // Poll every 10 seconds
+      
+      return () => clearInterval(interval);
+    }
   }, [dispatch, user]);
   
   // If we don't have booking data yet and it's not loading, redirect back to booking page
   useEffect(() => {
+    // Only redirect if we've attempted to load and found nothing
+    // This prevents immediate redirect on page refresh before data loads
     if (!loadingActiveBooking && !activeBooking && !error) {
-      navigate('/client/booking');
+      // Add a small delay to allow for data fetching to complete
+      const redirectTimer = setTimeout(() => {
+        // Check one more time before redirecting
+        if (!activeBooking) {
+          console.log('No active booking found after delay, redirecting to booking page');
+          navigate('/client/booking');
+        }
+      }, 2000); // 2 second delay
+      
+      return () => clearTimeout(redirectTimer);
     }
   }, [loadingActiveBooking, activeBooking, error, navigate]);
+  
+  // Debug logging for activeBooking data structure
+  useEffect(() => {
+    if (activeBooking) {
+      console.log('Active booking data structure:', activeBooking);
+      // Check if we have the entry object with barber info
+      if (activeBooking.entry && activeBooking.entry.barber) {
+        console.log('Barber info from entry:', activeBooking.entry.barber);
+      }
+      // Check if we have direct barber info
+      if (activeBooking.barber) {
+        console.log('Direct barber info:', activeBooking.barber);
+      }
+    }
+  }, [activeBooking]);
 
   const handleCancel = async () => {
     if (!activeBooking) {
@@ -137,21 +177,25 @@ export const QueuePage = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Salon</div>
-                    <div className="font-medium">{salon?.name}</div>
+                    <div className="font-medium">
+                      {activeBooking?.queue?.salon?.name || salon?.name || 'Unknown'}
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Barber</div>
                     <div className="font-medium">
-                      {barber?.name || (activeBooking?.entry?.barber?.name) || 'Unknown'}
-                      {barber?.experience || (activeBooking?.entry?.barber?.experience) ? 
-                        ` (${barber?.experience || activeBooking?.entry?.barber?.experience})` : ''}
+                      {activeBooking?.barber?.name || barber?.name || 'Unknown'}
+                      {activeBooking?.barber?.experience || barber?.experience ? 
+                        ` (${activeBooking?.barber?.experience || barber?.experience})` : ''}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500 mb-1">Location</div>
                     <div className="font-medium flex items-center">
                       <MapPinIcon size={16} className="mr-1 text-gray-400" />
-                      {city}, {neighborhood}
+                      {activeBooking?.queue?.salon?.location_city || city || ''}
+                      {(activeBooking?.queue?.salon?.location_city || city) && (activeBooking?.queue?.salon?.location_neighborhood || neighborhood) ? ', ' : ''}
+                      {activeBooking?.queue?.salon?.location_neighborhood || neighborhood || ''}
                     </div>
                   </div>
                 </div>

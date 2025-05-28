@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ClockIcon, CheckIcon, XIcon, MapPinIcon, ScissorsIcon, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { QueueVisualizer } from '../../components/client/Booking/QueueVisualizer';
-import { createNewBooking, fetchActiveBooking } from '../../store/slices/bookingSlice';
+import { createNewBooking, fetchActiveBooking, fetchQueueInfo } from '../../store/slices/bookingSlice';
 
 export const ConfirmationPage = () => {
   const navigate = useNavigate();
@@ -20,9 +20,18 @@ export const ConfirmationPage = () => {
   } = useSelector(state => state.booking);
   const { user } = useSelector(state => state.auth);
   
-  // Default values for UI before booking is created
-  const queuePosition = 3;
-  const totalInQueue = 7;
+  // Queue information
+  const { 
+    estimatedPosition, 
+    activeClientsCount, 
+    totalInQueue, 
+    loadingQueueInfo 
+  } = useSelector(state => state.booking);
+  
+  // Use estimated position or default to 1 more than active clients
+  const queuePosition = estimatedPosition || (activeClientsCount ? activeClientsCount + 1 : 3);
+  // Use total in queue or default to 7 if not available
+  const displayTotalInQueue = totalInQueue || (activeClientsCount ? activeClientsCount + 3 : 7);
   
   // Check if user already has an active booking
   useEffect(() => {
@@ -30,6 +39,13 @@ export const ConfirmationPage = () => {
       dispatch(fetchActiveBooking(user.clientId));
     }
   }, [dispatch, user]);
+  
+  // Fetch queue information for the selected barber and salon
+  useEffect(() => {
+    if (salon?.id && barber?.id) {
+      dispatch(fetchQueueInfo({ salonId: salon.id, barberId: barber.id }));
+    }
+  }, [dispatch, salon, barber]);
   
   // Redirect to queue page if user has active booking
   useEffect(() => {
@@ -126,26 +142,35 @@ export const ConfirmationPage = () => {
             </div>
             <div className="mt-4 md:mt-0 flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full">
               <ClockIcon size={18} className="mr-2" />
-              <span>Estimated wait: {calculateEstimatedWait()} min</span>
+              <span>
+                {loadingQueueInfo ? (
+                  <span className="flex items-center">
+                    <Loader2 size={14} className="mr-2 animate-spin" />
+                    Calculating wait time...
+                  </span>
+                ) : (
+                  `Estimated wait: ${calculateEstimatedWait()} min`
+                )}
+              </span>
             </div>
           </div>
 
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
             <h3 className="text-lg font-medium mb-4">Current Queue Status</h3>
             <div className="mb-6">
-              <QueueVisualizer position={queuePosition} total={totalInQueue} />
+              <QueueVisualizer position={queuePosition} total={displayTotalInQueue} />
             </div>
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Your position</span>
                 <span className="font-medium">
-                  {queuePosition} of {totalInQueue}
+                  {queuePosition} of {displayTotalInQueue}
                 </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div
                   className="bg-blue-600 h-2.5 rounded-full"
-                  style={{ width: `${(queuePosition / totalInQueue) * 100}%` }}
+                  style={{ width: `${(queuePosition / displayTotalInQueue) * 100}%` }}
                 ></div>
               </div>
               <p className="mt-2 text-sm text-gray-500">
