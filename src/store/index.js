@@ -3,6 +3,7 @@ import queueReducer from "./slices/queueSlice";
 import authReducer from "./slices/authSlice";
 import clientsReducer from "./slices/clientsSlice";
 import bookingReducer from "./slices/bookingSlice";
+import dashboardReducer from "./slices/dashboardSlice";
 import { notificationMiddleware } from "./middleware/notificationMiddleware";
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     queue: queueReducer,
     clients: clientsReducer,
     booking: bookingReducer,
+    dashboard: dashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

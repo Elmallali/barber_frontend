@@ -6,7 +6,6 @@ import {
   ClockIcon,
   UserIcon,
   SettingsIcon,
-  SearchIcon,
   LogOutIcon,
   BellIcon
 } from "lucide-react";
@@ -73,7 +72,7 @@ const ProfileDropdown = ({ user, isOpen, onClose }) => {
 };
 
 export function TopNavigation({ onOpenViewAll }) {
-  const [showSearch, setShowSearch] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
@@ -93,11 +92,30 @@ export function TopNavigation({ onOpenViewAll }) {
         setLoading(true);
         const userData = await authService.getCurrentUser();
         
+        // Set avatar URL based on available data
+        let avatarUrl = null;
+        if (userData.avatar_url) {
+          // Use the full URL provided by the backend
+          avatarUrl = userData.avatar_url;
+        } else if (userData.avatar) {
+          // Fallback to constructing URL if only path is provided
+          // Check if the avatar is a full URL or just a path
+          if (userData.avatar.startsWith('http')) {
+            avatarUrl = userData.avatar;
+          } else {
+            // Construct the full URL for the avatar
+            avatarUrl = `http://localhost:8000/storage/${userData.avatar}`;
+          }
+        } else {
+          // Use default avatar if none is provided
+          avatarUrl = 'https://randomuser.me/api/portraits/men/85.jpg';
+        }
+        
         // Set user data
         setCurrentUser({
           name: userData.name || localStorage.getItem('user_name') || 'User',
           email: userData.email || localStorage.getItem('user_email') || '',
-          avatar: userData.avatar_url || userData.avatar || null
+          avatar: avatarUrl
         });
         
         // Store basic user info in localStorage as fallback
@@ -186,26 +204,7 @@ export function TopNavigation({ onOpenViewAll }) {
 
           {/* NOTIFICATION + AVATAR */}
           <div className="flex items-center gap-4">
-            {showSearch && (
-              <div className="relative">
-                <SearchIcon
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={16}
-                />
-                <input
-                  type="text"
-                  placeholder="Search clients..."
-                  className="w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                />
-              </div>
-            )}
 
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <SearchIcon size={20} />
-            </button>
 
             <div className="relative">
               <button
@@ -216,7 +215,7 @@ export function TopNavigation({ onOpenViewAll }) {
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <BellIcon size={20} />
-                <NotificationBadge count={3} />
+                <NotificationBadge count={1} />
               </button>
             </div>
 
@@ -236,10 +235,10 @@ export function TopNavigation({ onOpenViewAll }) {
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold border-2 border-white shadow-sm">
                     {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'}
                   </div>
                 )}
